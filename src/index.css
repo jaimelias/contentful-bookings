@@ -8,3 +8,6 @@ div {
   font: inherit;
   vertical-align: baseline;
 }
+#root{
+  height: 500px;
+}
