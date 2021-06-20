@@ -276,7 +276,7 @@ class Field extends React.Component {
 	render(){
 		const {sdk} = this.props;
 		const {seasons, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
-		
+
 		const RenderHotTable = ({sdk, seasons, maxRows, colHeaders, columns}) => {
 			let output = [];
 			
@@ -297,14 +297,9 @@ class Field extends React.Component {
 			};
 			
 			for(let k in seasons)
-			{
+			{				
 				output.push(
-					<div 
-						id={k} 
-						key={k} 
-						className={'season-container'} 
-						style={{marginBottom: '40px'}}
-					>
+					<div title={k} key={k} style={{marginBottom: '40px'}}>
 						<Heading>{k}</Heading>
 						<br/>
 						<SectionHeading>{'Fixed Price'} - {k}</SectionHeading>
