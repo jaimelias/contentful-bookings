@@ -12,6 +12,8 @@ const defaultState = {
 	childrenFreeUpTo: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
+	colHeaders: ['Per Person'],
+	columns: [{type: 'numeric'}]
 }
 
 class Field extends React.Component {
@@ -19,7 +21,6 @@ class Field extends React.Component {
 		super(props);
 		const {sdk} = props;
 		const value = sdk.field.getValue();
-		this.colHeaders = ['Per Person'];
 		this.state = (value) ? value : defaultState;
 		this.handleCellChange = this.handleCellChange.bind(this);
 		this.handleRowChange = this.handleRowChange.bind(this);
@@ -28,9 +29,7 @@ class Field extends React.Component {
 	componentDidMount()
 	{
 		const {sdk} = this.props;
-		
-		console.log({sdk});
-		
+				
 		if(window.innerHeight < this.divRef.clientHeight)
 		{
 			sdk.window.updateHeight(this.divRef.clientHeight);
@@ -55,8 +54,7 @@ class Field extends React.Component {
 	};	
 	handleCellChange({changes, sdk, hot}){
 		
-		const value = {...this.state};
-		let {data} = value;
+		let {data} = {...this.state};
 		
 		if(changes)
 		{
@@ -87,10 +85,9 @@ class Field extends React.Component {
 
 	handleRowChange({changes, sdk}){
 		
-		const value = {...this.state};
-		let {data} = value;
+		let {data, maxRows} = {...this.state};
 		const newMaxRows = parseInt(changes.target.value);
-		const oldmaxRows = parseInt(value.maxRows);
+		const oldmaxRows = parseInt(maxRows);
 		
 		if(oldmaxRows !== newMaxRows)
 		{
@@ -116,19 +113,72 @@ class Field extends React.Component {
 		});
 	};
 	handleVariablePricing({sdk, type, change}){
-				
 		change = parseInt(change.target.value);
 		change = isNumber(change) ? change : 0;
 		
 		sdk.field.setValue({...this.state, [type]: change}).then(v => {
-			this.setState({...v});
-			console.log(v);
+			const {childrenDiscount, womenPricing} = v;
+			const data = [];
+			let addNull = 1;
+
+			let cols = {
+				colHeaders: {
+					persons: 'Per Person',
+					womenPricing: 'Women Discount',
+					childrenDiscount: 'Children Discount'
+				},
+				columns: {
+					persons: {type: 'numeric'},
+					womenPricing: {type: 'numeric'},
+					childrenDiscount: {type: 'numeric'}
+				},				
+			};
+			
+			if(womenPricing === 1)
+			{
+				addNull++;
+			}
+			else
+			{
+				delete cols.colHeaders.womenPricing;
+				delete cols.columns.womenPricing;
+			}
+
+			
+			if(childrenDiscount > 0)
+			{
+				addNull++;			
+			}
+			else
+			{
+				delete cols.colHeaders.childrenDiscount;
+				delete cols.columns.childrenDiscount;
+			}
+			
+			const colHeaders = Object.values(cols.colHeaders);
+			const columns = Object.values(cols.columns);
+
+			v.data.forEach(r => {
+				let d = r.filter((r, i) => (i+1) <= addNull);
+				
+				if(addNull > d.length)
+				{
+					const dif = addNull-d.length;				
+					[...Array(dif)].forEach(r => d.push(null));					
+				}
+				data.push(d);
+			});
+			
+			sdk.field.setValue({...v, data, colHeaders, columns}).then(v2 => {
+				this.setState({...v2});
+				console.log(this.state);
+			});
 		});		
 	};
 	render(){
 		const {sdk} = this.props;
-		const {data, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing} = this.state;
-		
+		const {data, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
+				
 		return(
 		
 			<div
@@ -172,9 +222,9 @@ class Field extends React.Component {
 					licenseKey={'non-commercial-and-evaluation'}
 					data={data} 
 					maxRows={maxRows}
-					colHeaders={this.colHeaders}
+					colHeaders={colHeaders}
 					rowHeaders={true}
-					columns={[{type: 'numeric'}]}
+					columns={columns}
 					width={'100%'}
 					afterChange={(changes)=> {this.handleCellChange({changes, sdk})}}
 				/>
