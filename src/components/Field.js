@@ -5,15 +5,15 @@ import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 
 const isNumber = val => !isNaN(Number(val));
-
+const column = {type: 'numeric'};
 const defaultState = {
-	maxRows: 20,
-	data: [...Array(20)].map(r => [null]),
+	maxRows: 2,
+	seasons: {season_1: [...Array(20)].map(r => [''])},
 	childrenFreeUpTo: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
 	colHeaders: ['Per Person'],
-	columns: [{type: 'numeric'}]
+	columns: [column]
 }
 
 class Field extends React.Component {
@@ -54,7 +54,7 @@ class Field extends React.Component {
 	};	
 	handleCellChange({changes, sdk, hot}){
 		
-		let {data} = {...this.state};
+		let {seasons} = {...this.state};
 		
 		if(changes)
 		{
@@ -67,15 +67,15 @@ class Field extends React.Component {
 					
 					if(oldValue !== newValue && !isNaN(oldValue) && !isNaN(newValue))
 					{
-						data[row][col] = newValue;
+						seasons.season_1[row][col] = newValue;
 					}
 					else
 					{
-						data[row][col] = null;
+						seasons.season_1[row][col] = '';
 					}
 				});
 																
-				sdk.field.setValue({...this.state, data}).then(v => {
+				sdk.field.setValue({...this.state, seasons}).then(v => {
 					this.setState({...v});
 					console.log(v);
 				});
@@ -85,21 +85,39 @@ class Field extends React.Component {
 
 	handleRowChange({changes, sdk}){
 		
-		let {data, maxRows} = {...this.state};
+		let {seasons, maxRows, womenPricing, childrenDiscount} = {...this.state};
 		const newMaxRows = parseInt(changes.target.value);
 		const oldmaxRows = parseInt(maxRows);
+		let addNulls = [''];
+		
+		if(womenPricing === 1)
+		{
+			addNulls = ['', ''];
+			
+			if(childrenDiscount > 0)
+			{
+				addNulls = ['', '', ''];
+			}
+		}
+		else
+		{
+			if(childrenDiscount > 0)
+			{
+				addNulls = ['', '', ''];
+			}			
+		}
 		
 		if(oldmaxRows !== newMaxRows)
 		{
-			data = data.filter((r, i) => (i+1) <= newMaxRows);
+			seasons.season_1 = seasons.season_1.filter((r, i) => (i+1) <= newMaxRows);
 			
 			if(newMaxRows > oldmaxRows)
 			{
 				const dif = newMaxRows-oldmaxRows;				
-				[...Array(dif)].forEach(r => data.push([null]));
+				[...Array(dif)].forEach(r => seasons.season_1.push(addNulls));
 			}
 			
-			sdk.field.setValue({...this.state, data, maxRows: newMaxRows}).then(v => {
+			sdk.field.setValue({...this.state, seasons, maxRows: newMaxRows}).then(v => {
 				this.setState({...v});
 				console.log(v);
 			});
@@ -118,7 +136,7 @@ class Field extends React.Component {
 		
 		sdk.field.setValue({...this.state, [type]: change}).then(v => {
 			const {childrenDiscount, womenPricing} = v;
-			const data = [];
+			const seasons = {};
 			let addNull = 1;
 
 			let cols = {
@@ -128,9 +146,9 @@ class Field extends React.Component {
 					childrenDiscount: 'Children Discount'
 				},
 				columns: {
-					persons: {type: 'numeric'},
-					womenPricing: {type: 'numeric'},
-					childrenDiscount: {type: 'numeric'}
+					persons: column,
+					womenPricing: column,
+					childrenDiscount: column
 				},				
 			};
 			
@@ -158,18 +176,23 @@ class Field extends React.Component {
 			const colHeaders = Object.values(cols.colHeaders);
 			const columns = Object.values(cols.columns);
 
-			v.data.forEach(r => {
+			v.seasons.season_1.forEach(r => {
 				let d = r.filter((r, i) => (i+1) <= addNull);
-				
+								
 				if(addNull > d.length)
 				{
 					const dif = addNull-d.length;				
-					[...Array(dif)].forEach(r => d.push(null));					
+					[...Array(dif)].forEach(r => d.push(''));					
 				}
-				data.push(d);
+				
+				if(typeof seasons.season_1 === 'undefined')
+				{
+					seasons.season_1 = [];
+				}
+				seasons.season_1.push(d);
 			});
 			
-			sdk.field.setValue({...v, data, colHeaders, columns}).then(v2 => {
+			sdk.field.setValue({...v, seasons, colHeaders, columns}).then(v2 => {
 				this.setState({...v2});
 				console.log(this.state);
 			});
@@ -177,7 +200,7 @@ class Field extends React.Component {
 	};
 	render(){
 		const {sdk} = this.props;
-		const {data, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
+		const {seasons, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
 				
 		return(
 		
@@ -220,7 +243,7 @@ class Field extends React.Component {
 				<div className={'hot-container'}>
 				<HotTable
 					licenseKey={'non-commercial-and-evaluation'}
-					data={data} 
+					data={seasons.season_1} 
 					maxRows={maxRows}
 					colHeaders={colHeaders}
 					rowHeaders={true}
