@@ -43,6 +43,7 @@ class Field extends React.Component {
 		this.handleVariablePricing = this.handleVariablePricing.bind(this);
 		this.forceUpdateHeight = this.forceUpdateHeight.bind(this);
 		this.handleSeasonsNumber = this.handleSeasonsNumber.bind(this);
+		this.handleDateChange = this.handleDateChange.bind(this);
 	};
 	forceUpdateHeight({sdk, thisWindow, updateHeight}){
 		if(updateHeight)
@@ -66,35 +67,7 @@ class Field extends React.Component {
 		const {updateHeight} = this.state;
 		this.forceUpdateHeight({sdk, updateHeight, thisWindow: window});
 	};	
-	handlePriceChange({change, sdk, seasonId, priceType}){
-		
-		let {seasons} = {...this.state};
-		
-		if(change)
-		{
-			if(Array.isArray(change))
-			{
-				change.forEach(o => {
-					
-					const [row, col, oldValue, newValue] = o;
 
-					if(oldValue !== newValue && !isNaN(oldValue) && !isNaN(newValue))
-					{
-						seasons[seasonId][priceType][row][col] = newValue;
-					}
-					else
-					{
-						seasons[seasonId][priceType][row][col] = '';
-					}
-				});
-																
-				sdk.field.setValue({...this.state, seasons}).then(v => {
-					this.setState({...v});
-					console.log(v);
-				});
-			}
-		}
-	};
 
 	handleRowChange({change, sdk}){
 		
@@ -289,8 +262,67 @@ class Field extends React.Component {
 			this.setState({...v});
 			console.log(this.state);
 		});
-	}
+	};
 	
+	handlePriceChange({change, sdk, seasonId, priceType}){
+		
+		let {seasons} = {...this.state};
+		
+		if(change)
+		{
+			if(Array.isArray(change))
+			{
+				change.forEach(o => {
+					
+					const [row, col, oldValue, newValue] = o;
+
+					if(oldValue !== newValue && !isNaN(newValue))
+					{
+						seasons[seasonId][priceType][row][col] = newValue;
+					}
+					else
+					{
+						seasons[seasonId][priceType][row][col] = '';
+					}
+				});
+																
+				sdk.field.setValue({...this.state, seasons}).then(v => {
+					this.setState({...v});
+					console.log(v);
+				});
+			}
+		}
+	};
+	
+	handleDateChange({change, sdk, seasonId}){
+		
+		let {seasons} = {...this.state};
+		
+		if(change)
+		{
+			if(Array.isArray(change))
+			{
+				change.forEach(o => {
+					
+					const [row, col, oldValue, newValue] = o;
+
+					if(oldValue !== newValue && isValidDate(newValue))
+					{
+						seasons[seasonId].dates[row][col] = newValue;
+					}
+					else
+					{
+						seasons[seasonId].dates[row][col] = '';
+					}
+				});
+																
+				sdk.field.setValue({...this.state, seasons}).then(v => {
+					this.setState({...v});
+					console.log(v);
+				});
+			}
+		}		
+	};
 	render(){
 		const {sdk} = this.props;
 		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
@@ -319,9 +351,12 @@ class Field extends React.Component {
 					colHeaders={['From', 'To']}
 					rowHeaders={true}
 					width={'100%'}
+					placeholder={'yyyy-mm-dd'}
+					columns={[{validator: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'}, {validator: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'}]}
+					afterChange={(change) => {this.handleDateChange({change, sdk, seasonId})}}
 				/>			
 			);
-			
+						
 			for(let k in seasons)
 			{				
 				output.push(
