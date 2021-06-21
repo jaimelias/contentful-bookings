@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelectField, Option, Button, Heading, SectionHeading, Form, FieldGroup} from '@contentful/forma-36-react-components';
+import { SelectField, Option, Button, Subheading, SectionHeading, Form, FieldGroup, TextInput, Flex, RadioButtonField} from '@contentful/forma-36-react-components';
 import { HotTable } from '@handsontable/react';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
@@ -29,7 +29,8 @@ const defaultState = {
 	womenPricing: 0,
 	colHeaders: ['Per Person'],
 	columns: [column],
-	updateHeight: false
+	updateHeight: false,
+	selectedSeasonTab: 'season_1'
 }
 
 
@@ -46,6 +47,8 @@ class Field extends React.Component {
 		this.handleSeasonsNumber = this.handleSeasonsNumber.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
 		this.handleDateRowChange = this.handleDateRowChange.bind(this);
+		this.handleSeasonRename = this.handleSeasonRename.bind(this);
+		this.handleSeasonSelect = this.handleSeasonSelect.bind(this);
 	};
 	forceUpdateHeight({sdk, thisWindow, updateHeight}){
 		if(updateHeight)
@@ -180,13 +183,13 @@ class Field extends React.Component {
 		{
 			seasonRowTemplate.push('');
 		}
-		
-		
+
 		const blankSeason = {
 			fixed: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
 			dynamic: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
 			dates: [['', '']]
 		};
+		
 		let startCounter = countSeasons + 1;
 		let dif;
 		
@@ -346,74 +349,166 @@ class Field extends React.Component {
 			
 		}
 	};
+	handleSeasonRename({change, sdk, seasonId}){
+		let {seasons} = {...this.state};
+		change = change.target.value;
+		
+		if(change)
+		{
+			seasons[seasonId].name = change;
+			
+			sdk.field.setValue({...this.state, seasons}).then(v => {
+				this.setState({...v});
+				console.log(v);
+			});			
+		}
+	};
+	
+	handleSeasonSelect({sdk, change}){
+		change = change.target.value;
+		
+		if(change)
+		{
+			sdk.field.setValue({...this.state, selectedSeasonTab: change, updateHeight: true}).then(v => {
+				this.setState({...v});
+				console.log(v);
+			});				
+		}
+	};
+	
 	render(){
 		const {sdk} = this.props;
-		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
+		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab} = this.state;
+		
+		const cellHeight = 23;
+		
 
 		const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns}) => {
 			let output = [];
-			
+			const tableHeight = (maxPriceRows+2)*cellHeight;
 			const GetTable = ({seasonId, priceType}) => (
-				<HotTable
-					licenseKey={'non-commercial-and-evaluation'}
-					data={seasons[seasonId][priceType]} 
-					maxRows={maxPriceRows}
-					colHeaders={colHeaders}
-					rowHeaders={true}
-					columns={columns}
-					width={'100%'}
-					afterChange={(change)=> {this.handlePriceChange({change, sdk, seasonId, priceType})}}
-				/>				
-			);
-			
-			const GetDate = ({seasonId}) => (
-				
-				<div>
-				
-					<SelectField
-						value={seasons[seasonId].dates.length}
-						labelText={'Add Date Ranges'}
-						onChange={(change) => {this.handleDateRowChange({sdk, change, seasonId})}}
-						>
-						{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-					</SelectField>				
-					<br/>
+				<div style={{height: tableHeight}}>
 					<HotTable
 						licenseKey={'non-commercial-and-evaluation'}
-						data={seasons[seasonId].dates} 
-						maxRows={seasons[seasonId].dates.length}
-						colHeaders={['From', 'To']}
+						data={seasons[seasonId][priceType]} 
+						maxRows={maxPriceRows}
+						colHeaders={colHeaders}
 						rowHeaders={true}
+						columns={columns}
+						colWidths={120}
 						width={'100%'}
-						placeholder={'yyyy-mm-dd'}
-						columns={[dateColumn, dateColumn]}
-						afterChange={(change) => {this.handleDateChange({change, sdk, seasonId})}}
+						height={(maxPriceRows+2)*cellHeight}
+						afterChange={change => {this.handlePriceChange({change, sdk, seasonId, priceType})}}
 					/>
 				</div>
 			);
+			
+			const GetDate = ({seasonId}) => {
+				
+				const maxDateRows = seasons[seasonId].dates.length;
+				const tableHeight = (maxDateRows+2)*cellHeight;
+				return (
+					<div>
+						<SelectField
+							value={maxDateRows}
+							onChange={(change) => {this.handleDateRowChange({sdk, change, seasonId})}}
+							>
+							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
+						</SelectField>				
+						<br/>
+						<SectionHeading>{'Date Ranges'} - {seasonId}</SectionHeading>
+						<br/>
+						<div style={{height: tableHeight}}>
+							<HotTable
+								licenseKey={'non-commercial-and-evaluation'}
+								data={seasons[seasonId].dates} 
+								maxRows={maxDateRows}
+								colHeaders={['From', 'To']}
+								rowHeaders={true}
+								width={'100%'}
+								colWidths={120}
+								placeholder={'yyyy-mm-dd'}
+								columns={[dateColumn, dateColumn]}
+								height={tableHeight}
+								afterChange={(change) => {this.handleDateChange({change, sdk, seasonId})}}
+							/>
+						</div>
+					</div>				
+				);
+				
+			};
+			
+			let tab = [];
 						
 			for(let k in seasons)
-			{				
+			{
+				const seasonName = seasons[k].name;
+				
 				output.push(
-					<div title={k} key={k} style={{marginBottom: '40px'}}>
-						<Heading>{k}</Heading>
-						<br/>
-						<SectionHeading>{'Dates'} - {k}</SectionHeading>
-						<br/>
-						<GetDate seasonId={k} />
-						<br/>
-						<SectionHeading>{'Fixed Price'} - {k}</SectionHeading>
-						<br/>
-						<GetTable seasonId={k} priceType={'fixed'} />
-						<br/>
-						<SectionHeading>{'Variable Price'} - {k}</SectionHeading>
-						<br/>
-						<GetTable seasonId={k} priceType={'dynamic'} />
-					</div>
+					<Flex
+						style={{
+							backgroundColor: '#eeeeee', 
+							borderTop: 'solid 1px #dddddd',
+							borderRight: 'solid 1px #dddddd',
+							borderLeft: 'solid 1px #dddddd',
+							padding: '10px'
+						}}
+						flexDirection={'column'} 
+						key={`${k}_radio`}>
+						<RadioButtonField
+							id={k}
+							value={k}
+							checked={selectedSeasonTab === k}
+							labelText={k}
+							helpText={seasonName}
+							onClick={change => {this.handleSeasonSelect({sdk, change})}}
+						/>
+					</Flex>
 				);
+								
+				if(selectedSeasonTab === k)
+				{
+					output.push(
+						<div id={k} title={k} key={`${k}_content`} style={{marginTop: '20px', marginBottom: '20px'}}>
+							<Subheading>
+								{k.toUpperCase()}{k !== seasonName ? ` - ${seasonName}` : ''}
+							</Subheading>
+							<br/>
+							{k !== 'season_1' ? 
+								<>
+								<SectionHeading>{'Dates Row Controller'} - {k}</SectionHeading>
+								<br/>
+								<GetDate seasonId={k} />
+								<br/>
+								</>
+								: ''
+							}
+							<SectionHeading>{'Fixed Price'} - {k}</SectionHeading>
+							<br/>
+							<GetTable seasonId={k} priceType={'fixed'} />
+							<br/>
+							<SectionHeading>{'Variable Price'} - {k}</SectionHeading>
+							<br/>
+							<GetTable seasonId={k} priceType={'dynamic'} />
+							<br/>
+							<SectionHeading>{'Rename Season'} - {k}</SectionHeading>
+							<br/>
+							<TextInput
+								value={k !== seasonName && seasonName ? seasonName : ''}
+								onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
+							/>						
+						</div>
+					);					
+				}
 			}
 			
-			return output;
+			return (
+				<div>
+					<SectionHeading>Select a Season</SectionHeading>
+					<br/>
+					{output}
+				</div>
+			);
 		};
 				
 		return(
@@ -421,7 +516,7 @@ class Field extends React.Component {
 				<Form>
 					
 					<FieldGroup>
-						<Button onClick={()=>{this.handleClearValue({sdk})}} buttonType={'muted'}>Clear Field</Button>
+						<Button onClick={()=>{this.handleClearValue({sdk})}} buttonType={'muted'}>Clear Fields</Button>
 						
 						<SelectField
 							value={childrenFreeUpTo}
@@ -449,14 +544,14 @@ class Field extends React.Component {
 						<SelectField
 							value={maxPriceRows}
 							labelText="Maximum Number of Prices Per Person" 
-							onChange={(change)=>{this.handlePriceRowChange({change, sdk})}}>
+							onChange={change =>{this.handlePriceRowChange({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
 						</SelectField>
 						
 						<SelectField
 							value={Object.keys(seasons).length}
 							labelText="Number of Seasons" 
-							onChange={(change)=>{this.handleSeasonsNumber({change, sdk})}}>
+							onChange={change =>{this.handleSeasonsNumber({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
 						</SelectField>						
 					</FieldGroup>
