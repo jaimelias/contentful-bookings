@@ -3,14 +3,25 @@ import { SelectField, Option, Button, Heading, SectionHeading, Form, FieldGroup}
 import { HotTable } from '@handsontable/react';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
-
+const priceKeys = ['fixed', 'dynamic']
 const isNumber = val => !isNaN(Number(val));
 const column = {type: 'numeric'};
+const isValidDate = str => {
+	const regEx = /^\d{4}-\d{2}-\d{2}$/;
+	if(!str.match(regEx)) return false;  
+	let d = new Date(str);
+	const dNum = d.getTime();
+	if(!dNum && dNum !== 0) return false;
+	return d.toISOString().slice(0,10) === str;
+}
+
 const defaultState = {
-	maxRows: 2,
+	maxPriceRows: 2,
 	seasons: {season_1: {
 		fixed: [...Array(2)].map(r => ['']),
-		dynamic: [...Array(2)].map(r => [''])
+		dynamic: [...Array(2)].map(r => ['']),
+		name: 'Default Prices',
+		dates: [['', '']]
 	}},
 	childrenFreeUpTo: 0,
 	childrenDiscount: 0,
@@ -27,7 +38,7 @@ class Field extends React.Component {
 		const {sdk} = props;
 		const value = sdk.field.getValue();
 		this.state = (value) ? value : defaultState;
-		this.handleCellChange = this.handleCellChange.bind(this);
+		this.handlePriceChange = this.handlePriceChange.bind(this);
 		this.handleRowChange = this.handleRowChange.bind(this);
 		this.handleVariablePricing = this.handleVariablePricing.bind(this);
 		this.forceUpdateHeight = this.forceUpdateHeight.bind(this);
@@ -55,7 +66,7 @@ class Field extends React.Component {
 		const {updateHeight} = this.state;
 		this.forceUpdateHeight({sdk, updateHeight, thisWindow: window});
 	};	
-	handleCellChange({change, sdk, seasonId, priceType}){
+	handlePriceChange({change, sdk, seasonId, priceType}){
 		
 		let {seasons} = {...this.state};
 		
@@ -87,9 +98,9 @@ class Field extends React.Component {
 
 	handleRowChange({change, sdk}){
 		
-		let {seasons, maxRows, womenPricing, childrenDiscount} = {...this.state};
+		let {seasons, maxPriceRows, womenPricing, childrenDiscount} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
-		const oldmaxRows = parseInt(maxRows);
+		const oldmaxPriceRows = parseInt(maxPriceRows);
 		let addNulls = [''];
 		
 		if(womenPricing === 1)
@@ -109,23 +120,26 @@ class Field extends React.Component {
 			}			
 		}
 		
-		if(oldmaxRows !== newMaxRows)
+		if(oldmaxPriceRows !== newMaxRows)
 		{
 			for(let s in seasons)
 			{
 				for(let t in seasons[s])
-				{					
-					seasons[s][t] = seasons[s][t].filter((r, i) => (i+1) <= newMaxRows);
-					
-					if(newMaxRows > oldmaxRows)
+				{	
+					if(priceKeys.includes(t))
 					{
-						const dif = newMaxRows-oldmaxRows;				
-						[...Array(dif)].forEach(r => seasons[s][t].push(addNulls));
+						seasons[s][t] = seasons[s][t].filter((r, i) => (i+1) <= newMaxRows);
+						
+						if(newMaxRows > oldmaxPriceRows)
+						{
+							const dif = newMaxRows-oldmaxPriceRows;				
+							[...Array(dif)].forEach(r => seasons[s][t].push(addNulls));
+						}						
 					}
 				}
 			}
 			
-			sdk.field.setValue({...this.state, seasons, maxRows: newMaxRows, updateHeight: true}).then(v => {
+			sdk.field.setValue({...this.state, seasons, maxPriceRows: newMaxRows, updateHeight: true}).then(v => {
 				this.setState({...v});
 				console.log(v);
 			});
@@ -199,24 +213,26 @@ class Field extends React.Component {
 		{
 			for(let t in seasons[s])
 			{
-				seasons[s][t].map(r => {
-					
-					if(addNull)
-					{
+				if(priceKeys.includes(t))
+				{
+					seasons[s][t].map(r => {
+						
+						if(addNull)
+						{
 
-						r.push('');
-					}
-					else
-					{
-						r.pop();
-					}
-					
-					return r;
-				});
+							r.push('');
+						}
+						else
+						{
+							r.pop();
+						}
+						
+						return r;
+					});					
+				}
 			}
 		}
 		
-		console.log(seasons.season_1.fixed);
 
 		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [type]: change}).then(v => {
 			this.setState({...v});
@@ -228,7 +244,7 @@ class Field extends React.Component {
 	handleSeasonsNumber({change, sdk})
 	{
 		change = parseInt(change.target.value);
-		let {seasons, maxRows, womenPricing, childrenDiscount} = this.state;
+		let {seasons, maxPriceRows, womenPricing, childrenDiscount} = this.state;
 		const countSeasons = Object.keys(seasons).length;
 		let seasonRowTemplate = [''];
 		
@@ -243,8 +259,9 @@ class Field extends React.Component {
 		
 		
 		const blankSeason = {
-			fixed: [...Array(maxRows)].map(r => seasonRowTemplate),
-			dynamic: [...Array(maxRows)].map(r => seasonRowTemplate)
+			fixed: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
+			dynamic: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
+			dates: [['', '']]
 		};
 		let startCounter = countSeasons + 1;
 		let dif;
@@ -253,7 +270,8 @@ class Field extends React.Component {
 		{
 			dif = change-countSeasons;			
 			[...Array(dif)].forEach((r, i) => {
-				seasons['seasons_' + (startCounter + i)] = blankSeason;
+				const seasonName = 'seasons_' + (startCounter + i);
+				seasons[seasonName] = {...blankSeason, name: seasonName};
 			});			
 		}
 		else
@@ -266,7 +284,7 @@ class Field extends React.Component {
 				}
 			});			
 		}
-		
+				
 		sdk.field.setValue({...this.state, seasons, updateHeight: true}).then(v => {
 			this.setState({...v});
 			console.log(this.state);
@@ -275,32 +293,44 @@ class Field extends React.Component {
 	
 	render(){
 		const {sdk} = this.props;
-		const {seasons, maxRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
+		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns} = this.state;
 
-		const RenderHotTable = ({sdk, seasons, maxRows, colHeaders, columns}) => {
+		const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns}) => {
 			let output = [];
 			
-			const GetTable = ({seasonId, priceType}) => {
-				
-				return (
-					<HotTable
-						licenseKey={'non-commercial-and-evaluation'}
-						data={seasons[seasonId][priceType]} 
-						maxRows={maxRows}
-						colHeaders={colHeaders}
-						rowHeaders={true}
-						columns={columns}
-						width={'100%'}
-						afterChange={(change)=> {this.handleCellChange({change, sdk, seasonId, priceType})}}
-					/>				
-				);
-			};
+			const GetTable = ({seasonId, priceType}) => (
+				<HotTable
+					licenseKey={'non-commercial-and-evaluation'}
+					data={seasons[seasonId][priceType]} 
+					maxRows={maxPriceRows}
+					colHeaders={colHeaders}
+					rowHeaders={true}
+					columns={columns}
+					width={'100%'}
+					afterChange={(change)=> {this.handlePriceChange({change, sdk, seasonId, priceType})}}
+				/>				
+			);
+			
+			const GetDate = ({seasonId}) => (
+				<HotTable
+					licenseKey={'non-commercial-and-evaluation'}
+					data={seasons[seasonId].dates} 
+					maxRows={1}
+					colHeaders={['From', 'To']}
+					rowHeaders={true}
+					width={'100%'}
+				/>			
+			);
 			
 			for(let k in seasons)
 			{				
 				output.push(
 					<div title={k} key={k} style={{marginBottom: '40px'}}>
 						<Heading>{k}</Heading>
+						<br/>
+						<SectionHeading>{'Dates'} - {k}</SectionHeading>
+						<br/>
+						<GetDate seasonId={k} />
 						<br/>
 						<SectionHeading>{'Fixed Price'} - {k}</SectionHeading>
 						<br/>
@@ -347,7 +377,7 @@ class Field extends React.Component {
 						</SelectField>				
 						
 						<SelectField
-							value={maxRows}
+							value={maxPriceRows}
 							labelText="Maximum Number of Prices Per Person" 
 							onChange={(change)=>{this.handleRowChange({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
@@ -364,7 +394,7 @@ class Field extends React.Component {
 					<RenderHotTable
 						sdk={sdk}
 						seasons={seasons}
-						maxRows={maxRows} 
+						maxPriceRows={maxPriceRows} 
 						colHeaders={colHeaders}
 						columns={columns}
 					/>
