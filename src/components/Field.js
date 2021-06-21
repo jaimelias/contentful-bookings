@@ -33,7 +33,6 @@ const defaultState = {
 	selectedSeasonTab: 'season_1'
 }
 
-
 class Field extends React.Component {
 	constructor(props){
 		super(props);
@@ -54,11 +53,7 @@ class Field extends React.Component {
 		if(updateHeight)
 		{
 			sdk.window.updateHeight(this.divRef.clientHeight);
-			
-			sdk.field.setValue({...this.state, updateHeight: false}).then(v => {
-				this.setState({...v});
-				console.log('height update to fit component');
-			});
+			this.setState({...this.state, updateHeight: false});
 		}		
 	};
 	componentDidMount()
@@ -369,22 +364,17 @@ class Field extends React.Component {
 		
 		if(change)
 		{
-			sdk.field.setValue({...this.state, selectedSeasonTab: change, updateHeight: true}).then(v => {
-				this.setState({...v});
-				console.log(v);
-			});				
+			this.setState({...this.state, selectedSeasonTab: change, updateHeight: true});		
 		}
 	};
 	
 	render(){
 		const {sdk} = this.props;
 		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab} = this.state;
-		
 		const cellHeight = 23;
 		
-
 		const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns}) => {
-			let output = [];
+
 			const tableHeight = (maxPriceRows+2)*cellHeight;
 			const GetTable = ({seasonId, priceType}) => (
 				<div style={{height: tableHeight}}>
@@ -395,7 +385,7 @@ class Field extends React.Component {
 						colHeaders={colHeaders}
 						rowHeaders={true}
 						columns={columns}
-						colWidths={120}
+						colWidths={150}
 						width={'100%'}
 						height={(maxPriceRows+2)*cellHeight}
 						afterChange={change => {this.handlePriceChange({change, sdk, seasonId, priceType})}}
@@ -416,7 +406,7 @@ class Field extends React.Component {
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
 						</SelectField>				
 						<br/>
-						<SectionHeading>{'Date Ranges'} - {seasonId}</SectionHeading>
+						<SectionHeading>{'Date Ranges'}</SectionHeading>
 						<br/>
 						<div style={{height: tableHeight}}>
 							<HotTable
@@ -426,7 +416,7 @@ class Field extends React.Component {
 								colHeaders={['From', 'To']}
 								rowHeaders={true}
 								width={'100%'}
-								colWidths={120}
+								colWidths={150}
 								placeholder={'yyyy-mm-dd'}
 								columns={[dateColumn, dateColumn]}
 								height={tableHeight}
@@ -435,72 +425,65 @@ class Field extends React.Component {
 						</div>
 					</div>				
 				);
-				
 			};
 			
-			let tab = [];
-						
-			for(let k in seasons)
-			{
+			const output = Object.keys(seasons).map(k => {
 				const seasonName = seasons[k].name;
-				
-				output.push(
-					<Flex
-						style={{
-							backgroundColor: '#eeeeee', 
-							borderTop: 'solid 1px #dddddd',
-							borderRight: 'solid 1px #dddddd',
-							borderLeft: 'solid 1px #dddddd',
-							padding: '10px'
-						}}
-						flexDirection={'column'} 
-						key={`${k}_radio`}>
-						<RadioButtonField
-							id={k}
-							value={k}
-							checked={selectedSeasonTab === k}
-							labelText={k}
-							helpText={seasonName}
-							onClick={change => {this.handleSeasonSelect({sdk, change})}}
-						/>
-					</Flex>
+		
+				return (
+					<div key={k}>
+						<Flex
+							style={{
+								backgroundColor: '#eeeeee', 
+								borderTop: 'solid 1px #dddddd',
+								borderRight: 'solid 1px #dddddd',
+								borderLeft: 'solid 1px #dddddd',
+								padding: '10px'
+							}}
+							flexDirection={'column'} >
+							<RadioButtonField
+								id={k}
+								value={k}
+								checked={selectedSeasonTab === k}
+								labelText={k}
+								helpText={seasonName}
+								onClick={change => {this.handleSeasonSelect({sdk, change})}}
+							/>
+						</Flex>
+						{selectedSeasonTab === k ? (
+							<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>		
+								<Subheading>
+									{k.toUpperCase()}{k !== seasonName ? ` - ${seasonName}` : ''}
+								</Subheading>
+								<br/>
+								{k !== 'season_1' ? 
+									<>
+									<SectionHeading>{'Number of Dates'}</SectionHeading>
+									<br/>
+									<GetDate seasonId={k} />
+									<br/>
+									</>
+									: ''
+								}
+								<SectionHeading>{'Fixed Price'}</SectionHeading>
+								<br/>
+								<GetTable seasonId={k} priceType={'fixed'} />
+								<br/>
+								<SectionHeading>{'Variable Price'}</SectionHeading>
+								<br/>
+								<GetTable seasonId={k} priceType={'dynamic'} />
+								<br/>
+								<SectionHeading>{'Rename Season'}</SectionHeading>
+								<br/>
+								<TextInput
+									value={k !== seasonName && seasonName ? seasonName : ''}
+									onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
+								/>
+							</div>
+						) : ''}
+					</div>
 				);
-								
-				if(selectedSeasonTab === k)
-				{
-					output.push(
-						<div id={k} title={k} key={`${k}_content`} style={{marginTop: '20px', marginBottom: '20px'}}>
-							<Subheading>
-								{k.toUpperCase()}{k !== seasonName ? ` - ${seasonName}` : ''}
-							</Subheading>
-							<br/>
-							{k !== 'season_1' ? 
-								<>
-								<SectionHeading>{'Dates Row Controller'} - {k}</SectionHeading>
-								<br/>
-								<GetDate seasonId={k} />
-								<br/>
-								</>
-								: ''
-							}
-							<SectionHeading>{'Fixed Price'} - {k}</SectionHeading>
-							<br/>
-							<GetTable seasonId={k} priceType={'fixed'} />
-							<br/>
-							<SectionHeading>{'Variable Price'} - {k}</SectionHeading>
-							<br/>
-							<GetTable seasonId={k} priceType={'dynamic'} />
-							<br/>
-							<SectionHeading>{'Rename Season'} - {k}</SectionHeading>
-							<br/>
-							<TextInput
-								value={k !== seasonName && seasonName ? seasonName : ''}
-								onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
-							/>						
-						</div>
-					);					
-				}
-			}
+			});
 			
 			return (
 				<div>
@@ -514,7 +497,6 @@ class Field extends React.Component {
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				<Form>
-					
 					<FieldGroup>
 						<Button onClick={()=>{this.handleClearValue({sdk})}} buttonType={'muted'}>Clear Fields</Button>
 						
@@ -555,7 +537,7 @@ class Field extends React.Component {
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
 						</SelectField>						
 					</FieldGroup>
-					
+				
 					<RenderHotTable
 						sdk={sdk}
 						seasons={seasons}
@@ -563,7 +545,6 @@ class Field extends React.Component {
 						colHeaders={colHeaders}
 						columns={columns}
 					/>
-					
 				</Form>
 			</div>
 		);
