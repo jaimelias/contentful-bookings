@@ -17,6 +17,7 @@ const isValidDate = str => {
 }
 
 const defaultState = {
+	enabled: false,
 	maxPriceRows: 2,
 	seasons: {season_1: {
 		fixed: [...Array(2)].map(r => ['']),
@@ -24,7 +25,8 @@ const defaultState = {
 		name: 'Default Prices',
 		dates: [['', '']]
 	}},
-	childrenFreeUpTo: 0,
+	childrenFreeUpToYearsOld: 0,
+	maxNumberChildrenFree: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
 	colHeaders: ['Per Person'],
@@ -48,12 +50,13 @@ class Field extends React.Component {
 		this.handleDateRowChange = this.handleDateRowChange.bind(this);
 		this.handleSeasonRename = this.handleSeasonRename.bind(this);
 		this.handleSeasonSelect = this.handleSeasonSelect.bind(this);
+		this.handlemaxNumberChildrenFree = this.handlemaxNumberChildrenFree.bind(this);
 	};
 	forceUpdateHeight({sdk, thisWindow, updateHeight}){
 		if(updateHeight)
 		{
-			sdk.window.updateHeight(this.divRef.clientHeight);
-			this.setState({...this.state, updateHeight: false});
+				sdk.window.updateHeight(this.divRef.clientHeight);
+				this.setState({...this.state, updateHeight: false});
 		}		
 	};
 	componentDidMount()
@@ -67,9 +70,11 @@ class Field extends React.Component {
 		const {updateHeight} = this.state;
 		this.forceUpdateHeight({sdk, updateHeight, thisWindow: window});
 	};
-	handleClearValue({sdk}){
-				
-		sdk.field.setValue({...defaultState}).then(v => {
+	handleEnableDisableApp({sdk, change}){
+		
+		change = (change.target.value === 'true');
+		
+		sdk.field.setValue({...defaultState, enabled: change}).then(v => {
 			this.setState({...v});
 			console.log(v);
 		});
@@ -368,9 +373,18 @@ class Field extends React.Component {
 		}
 	};
 	
+	handlemaxNumberChildrenFree({change, sdk}){
+		change = parseInt(change.target.value);
+		
+		sdk.field.setValue({...this.state, maxNumberChildrenFree: change}).then(v => {
+			this.setState({...v});
+			console.log(v);
+		});			
+	}
+	
 	render(){
 		const {sdk} = this.props;
-		const {seasons, maxPriceRows, childrenFreeUpTo, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab} = this.state;
+		const {enabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree} = this.state;
 		const cellHeight = 23;
 		
 		const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns}) => {
@@ -497,19 +511,34 @@ class Field extends React.Component {
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				<Form>
-					<FieldGroup>
-						<Button onClick={()=>{this.handleClearValue({sdk})}} buttonType={'muted'}>Clear Fields</Button>
-						
+					<FieldGroup>						
 						<SelectField
-							value={childrenFreeUpTo}
-							labelText={'Children free up to # (years old)'} 
-							onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenFreeUpTo', change})}}>
+							value={enabled}
+							labelText={`Enable / Disable Pricing App`} 
+							onChange={(change) => {this.handleEnableDisableApp({sdk, change})}}>
+							<Option value={true}>{'Enabled'}</Option>
+							<Option value={false}>{'Disabled'}</Option>
+						</SelectField>
+	
+						<SelectField
+							value={childrenFreeUpToYearsOld}
+							labelText={`Children free of cost up to ${childrenFreeUpToYearsOld} years old`} 
+							onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenFreeUpToYearsOld', change})}}>
 							{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
 						</SelectField>
 						
+						{childrenFreeUpToYearsOld > 0 ? (
+							<SelectField
+								value={maxNumberChildrenFree}
+								labelText={`Up to ${maxNumberChildrenFree} children are allowed to book free of cost`} 
+								onChange={(change) => {this.handlemaxNumberChildrenFree({sdk, change})}}>
+								{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
+							</SelectField>
+						) : ''}
+						
 						<SelectField
 							value={childrenDiscount}
-							labelText={'Children discount up to # (years old)'} 
+							labelText={`Children discount up to ${childrenDiscount} years old`} 
 							onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenDiscount', change})}}>
 							{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
 						</SelectField>
@@ -544,7 +573,8 @@ class Field extends React.Component {
 						maxPriceRows={maxPriceRows} 
 						colHeaders={colHeaders}
 						columns={columns}
-					/>
+					/>	
+					
 				</Form>
 			</div>
 		);
