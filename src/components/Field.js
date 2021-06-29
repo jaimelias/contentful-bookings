@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelectField, Option, Subheading, SectionHeading, Form, TextInput, RadioButtonField, Switch, FormLabel} from '@contentful/forma-36-react-components';
+import { SelectField, Option, Subheading, SectionHeading, Form, TextInput, Switch, FormLabel, Icon, Paragraph} from '@contentful/forma-36-react-components';
 import { HotTable } from '@handsontable/react';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
@@ -49,7 +49,7 @@ class Field extends React.Component {
 		this.handleDateChange = this.handleDateChange.bind(this);
 		this.handleDateRowChange = this.handleDateRowChange.bind(this);
 		this.handleSeasonRename = this.handleSeasonRename.bind(this);
-		this.handleSeasonSelect = this.handleSeasonSelect.bind(this);
+		this.handleSeasonAccordion = this.handleSeasonAccordion.bind(this);
 		this.handlemaxNumberChildrenFree = this.handlemaxNumberChildrenFree.bind(this);
 		this.handleEnableDisableApp = this.handleEnableDisableApp.bind(this);
 	};
@@ -363,13 +363,15 @@ class Field extends React.Component {
 		}
 	};
 	
-	handleSeasonSelect({sdk, change}){
-		change = change.target.value;
+	handleSeasonAccordion({sdk, change}){
 		
-		if(change)
-		{
-			this.setState({...this.state, selectedSeasonTab: change, updateHeight: true});		
-		}
+		const {selectedSeasonTab} = {...this.state};
+		change = (change === selectedSeasonTab) ? '' : change;	
+
+		sdk.field.setValue({...this.state, selectedSeasonTab: change, updateHeight: true}).then(v => {
+			this.setState({...v});
+			console.log(v);
+		});
 	};
 	
 	handlemaxNumberChildrenFree({change, sdk}){
@@ -442,10 +444,18 @@ class Field extends React.Component {
 			
 			const output = Object.keys(seasons).map(k => {
 				const seasonName = seasons[k].name;
-		
+				
+				const getIcon = () => {
+					const i = (selectedSeasonTab === k) ? 'ChevronUp' : 'ChevronDown';
+					
+					return (
+						<Paragraph>{k} <Icon icon={i} style={{'float': 'left', marginRight: '10px'}}/></Paragraph>
+					);
+				};
+						
 				return (
 					<div key={k} style={{border: '1px solid #dddddd', padding: '10px', marginBottom: '20px'}}>
-						<FormLabel 
+						<div 
 							style={{
 								backgroundColor: '#eeeeee', 
 								borderTop: 'solid 1px #dddddd',
@@ -457,21 +467,22 @@ class Field extends React.Component {
 								boxSizing: 'border-box',
 								cursor: 'pointer'
 							}}
-							
-							htmlFor={k}
-							
-							>
-							<RadioButtonField
-								id={k}
-								value={k}
-								checked={selectedSeasonTab === k}
-								labelText={k}
-								helpText={seasonName}
-								onClick={change => {this.handleSeasonSelect({sdk, change})}}
-							/>
-						</FormLabel>
+							onClick={() => {this.handleSeasonAccordion({sdk, change: k})}}
+							htmlFor={k} >
+							{getIcon()}
+						</div>
 						{selectedSeasonTab === k ? (
-							<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>		
+							<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>	
+								<FormLabel htmlFor={`rename_season_${k}`}>{'Rename Season'}</FormLabel>
+								
+								<TextInput
+									id={`rename_season_${k}`}
+									value={k !== seasonName && seasonName ? seasonName : ''}
+									onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
+								/>
+							
+								<br/>
+							
 								<Subheading>
 									{k.toUpperCase()}{k !== seasonName ? ` - ${seasonName}` : ''}
 								</Subheading>
@@ -492,13 +503,6 @@ class Field extends React.Component {
 								<SectionHeading>{'Variable Price'}</SectionHeading>
 								<br/>
 								<GetTable seasonId={k} priceType={'dynamic'} />
-								<br/>
-								<SectionHeading>{'Rename Season'}</SectionHeading>
-								<br/>
-								<TextInput
-									value={k !== seasonName && seasonName ? seasonName : ''}
-									onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
-								/>
 							</div>
 						) : ''}
 					</div>
