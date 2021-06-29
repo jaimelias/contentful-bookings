@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelectField, Option, Button, Subheading, SectionHeading, Form, FieldGroup, TextInput, Flex, RadioButtonField} from '@contentful/forma-36-react-components';
+import { SelectField, Option, Subheading, SectionHeading, Form, TextInput, RadioButtonField, Switch, FormLabel} from '@contentful/forma-36-react-components';
 import { HotTable } from '@handsontable/react';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
@@ -51,6 +51,7 @@ class Field extends React.Component {
 		this.handleSeasonRename = this.handleSeasonRename.bind(this);
 		this.handleSeasonSelect = this.handleSeasonSelect.bind(this);
 		this.handlemaxNumberChildrenFree = this.handlemaxNumberChildrenFree.bind(this);
+		this.handleEnableDisableApp = this.handleEnableDisableApp.bind(this);
 	};
 	forceUpdateHeight({sdk, thisWindow, updateHeight}){
 		if(updateHeight)
@@ -71,8 +72,6 @@ class Field extends React.Component {
 		this.forceUpdateHeight({sdk, updateHeight, thisWindow: window});
 	};
 	handleEnableDisableApp({sdk, change}){
-		
-		change = (change.target.value === 'true');
 		
 		sdk.field.setValue({...defaultState, enabled: change}).then(v => {
 			this.setState({...v});
@@ -445,16 +444,23 @@ class Field extends React.Component {
 				const seasonName = seasons[k].name;
 		
 				return (
-					<div key={k}>
-						<Flex
+					<div key={k} style={{border: '1px solid #dddddd', padding: '10px', marginBottom: '20px'}}>
+						<FormLabel 
 							style={{
 								backgroundColor: '#eeeeee', 
 								borderTop: 'solid 1px #dddddd',
 								borderRight: 'solid 1px #dddddd',
 								borderLeft: 'solid 1px #dddddd',
-								padding: '10px'
+								padding: '10px',
+								width: '100%',
+								display: 'block',
+								boxSizing: 'border-box',
+								cursor: 'pointer'
 							}}
-							flexDirection={'column'} >
+							
+							htmlFor={k}
+							
+							>
 							<RadioButtonField
 								id={k}
 								value={k}
@@ -463,7 +469,7 @@ class Field extends React.Component {
 								helpText={seasonName}
 								onClick={change => {this.handleSeasonSelect({sdk, change})}}
 							/>
-						</Flex>
+						</FormLabel>
 						{selectedSeasonTab === k ? (
 							<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>		
 								<Subheading>
@@ -510,16 +516,17 @@ class Field extends React.Component {
 				
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
+				
 				<Form>
-					<FieldGroup>						
-						<SelectField
-							value={enabled}
-							labelText={`Enable / Disable Pricing App`} 
-							onChange={(change) => {this.handleEnableDisableApp({sdk, change})}}>
-							<Option value={true}>{'Enabled'}</Option>
-							<Option value={false}>{'Disabled'}</Option>
-						</SelectField>
-	
+						<FormLabel htmlFor={'appStatus'}>
+							<Switch
+								id={'appStatus'}
+								isChecked={enabled} 
+								labelText={`Prices ${enabled ? 'Enabled' : 'Disabled'}`}
+								onToggle={(change) => {this.handleEnableDisableApp({sdk, change})}}
+							/>
+						</FormLabel>
+					
 						<SelectField
 							value={childrenFreeUpToYearsOld}
 							labelText={`Children free of cost up to ${childrenFreeUpToYearsOld} years old`} 
@@ -564,9 +571,8 @@ class Field extends React.Component {
 							labelText="Number of Seasons" 
 							onChange={change =>{this.handleSeasonsNumber({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-						</SelectField>						
-					</FieldGroup>
-				
+						</SelectField>
+					
 					<RenderHotTable
 						sdk={sdk}
 						seasons={seasons}
