@@ -72,7 +72,7 @@ class Field extends React.Component {
 	};
 	handleEnableDisableApp({sdk, change}){
 		
-		sdk.field.setValue({...defaultState, enabled: change}).then(v => {
+		sdk.field.setValue({...defaultState, enabled: change, updateHeight: true}).then(v => {
 			this.setState({...v});
 			console.log({handleEnableDisableApp: v});
 		});
@@ -392,14 +392,16 @@ class Field extends React.Component {
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				
 				<Form>
-						<FormLabel htmlFor={'appStatus'}>
-							<Switch
-								id={'appStatus'}
-								isChecked={enabled} 
-								labelText={`Prices ${enabled ? 'Enabled' : 'Disabled'}`}
-								onToggle={(change) => {this.handleEnableDisableApp({sdk, change})}}
-							/>
-						</FormLabel>
+						<div style={{paddingTop: '20px', paddingRight: '20px', paddingBottom: '10px', paddingLeft: '20px', border: 'solid 1px #dddddd'}}>
+							<FormLabel htmlFor={'appStatus'}>
+								<Switch
+									id={'appStatus'}
+									isChecked={enabled} 
+									labelText={`Prices ${enabled ? 'Enabled' : 'Disabled'}`}
+									onToggle={(change) => {this.handleEnableDisableApp({sdk, change})}}
+								/>
+							</FormLabel>
+						</div>
 					
 						<FormLabel htmlFor={'childrenFreeUpToYearsOld'}>
 							{`Children free of cost up to ${childrenFreeUpToYearsOld} years old`}
@@ -481,6 +483,7 @@ class Field extends React.Component {
 						maxPriceRows={maxPriceRows} 
 						colHeaders={colHeaders}
 						columns={columns}
+						enabled={enabled}
 						selectedSeasonTab={selectedSeasonTab}
 						enabled={enabled}
 						handlePriceChange={this.handlePriceChange}
