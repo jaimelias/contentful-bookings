@@ -1,11 +1,10 @@
 import React from 'react';
-import { SelectField, Option, Subheading, SectionHeading, Form, TextInput, Switch, FormLabel, Icon, Paragraph} from '@contentful/forma-36-react-components';
-import { HotTable } from '@handsontable/react';
+import { Select, Option, Form, Switch, FormLabel} from '@contentful/forma-36-react-components';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
+import {RenderHotTable} from './HandsOnTable.js';
 const priceKeys = ['fixed', 'dynamic']
 const isNumber = val => !isNaN(Number(val));
-const dateColumn = {validator: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'};
 const column = {type: 'numeric'};
 const isValidDate = str => {
 	const regEx = /^\d{4}-\d{2}-\d{2}$/;
@@ -29,7 +28,7 @@ const defaultState = {
 	maxNumberChildrenFree: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
-	colHeaders: ['Per Person'],
+	colHeaders: ['Participants'],
 	columns: [column],
 	updateHeight: false,
 	selectedSeasonTab: 'season_1'
@@ -75,7 +74,7 @@ class Field extends React.Component {
 		
 		sdk.field.setValue({...defaultState, enabled: change}).then(v => {
 			this.setState({...v});
-			console.log(v);
+			console.log({handleEnableDisableApp: v});
 		});
 	};
 	handleVariablePricing({sdk, type, change}){
@@ -86,9 +85,9 @@ class Field extends React.Component {
 
 		let cols = {
 			colHeaders: {
-				persons: 'Per Person',
-				womenPricing: 'Women Discount',
-				childrenDiscount: 'Children Discount'
+				persons: 'Participants',
+				womenPricing: '',
+				childrenDiscount: ''
 			},
 			columns: {
 				persons: column,
@@ -100,12 +99,14 @@ class Field extends React.Component {
 		if(womenPricing === 1 && type !== 'womenPricing')
 		{
 			addNull = true;
+			cols.colHeaders = {...cols.colHeaders, persons: 'Men', womenPricing: 'Women'};
 		}
 		else
 		{
 			if(type === 'womenPricing' && change === 1)
 			{
 				addNull = true;
+				cols.colHeaders = {...cols.colHeaders, persons: 'Men', womenPricing: 'Women'};
 			}
 			else
 			{
@@ -117,13 +118,15 @@ class Field extends React.Component {
 		
 		if(childrenDiscount > 0 && type !== 'childrenDiscount')
 		{
-			addNull = true;	
+			addNull = true;
+			cols.colHeaders = {...cols.colHeaders, childrenDiscount: `Child Up to ${change} years old`};
 		}
 		else
 		{
 			if(type === 'childrenDiscount' && change > 0)
 			{
 				addNull = true;
+				cols.colHeaders = {...cols.colHeaders, childrenDiscount: `Children up to ${change} years old`};
 			}
 			else
 			{
@@ -159,10 +162,9 @@ class Field extends React.Component {
 			}
 		}
 		
-
-		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [type]: change}).then(v => {
+		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [type]: change, updateHeight: true}).then(v => {
 			this.setState({...v});
-			console.log(this.state);
+			console.log({handleVariablePricing: v});
 		});
 	
 	};
@@ -213,7 +215,7 @@ class Field extends React.Component {
 				
 		sdk.field.setValue({...this.state, seasons, updateHeight: true}).then(v => {
 			this.setState({...v});
-			console.log(this.state);
+			console.log({handleSeasonsNumber: v});
 		});
 	};
 	
@@ -241,7 +243,7 @@ class Field extends React.Component {
 																
 				sdk.field.setValue({...this.state, seasons}).then(v => {
 					this.setState({...v});
-					console.log(v);
+					console.log({handlePriceChange: v});
 				});
 			}
 		}
@@ -271,7 +273,7 @@ class Field extends React.Component {
 																
 				sdk.field.setValue({...this.state, seasons}).then(v => {
 					this.setState({...v});
-					console.log(v);
+					console.log({handleDateChange: v});
 				});
 			}
 		}		
@@ -321,7 +323,7 @@ class Field extends React.Component {
 			
 			sdk.field.setValue({...this.state, seasons, maxPriceRows: newMaxRows, updateHeight: true}).then(v => {
 				this.setState({...v});
-				console.log(v);
+				console.log({handlePriceRowChange: v});
 			});
 		}
 	};	
@@ -343,9 +345,8 @@ class Field extends React.Component {
 		
 			sdk.field.setValue({...this.state, seasons, updateHeight: true}).then(v => {
 				this.setState({...v});
-				console.log(v);
-			});			
-			
+				console.log({handleDateRowChange: v});
+			});
 		}
 	};
 	handleSeasonRename({change, sdk, seasonId}){
@@ -358,7 +359,7 @@ class Field extends React.Component {
 			
 			sdk.field.setValue({...this.state, seasons}).then(v => {
 				this.setState({...v});
-				console.log(v);
+				console.log({handleSeasonRename: v});
 			});			
 		}
 	};
@@ -370,7 +371,7 @@ class Field extends React.Component {
 
 		sdk.field.setValue({...this.state, selectedSeasonTab: change, updateHeight: true}).then(v => {
 			this.setState({...v});
-			console.log(v);
+			console.log({handleSeasonAccordion: v});
 		});
 	};
 	
@@ -379,145 +380,14 @@ class Field extends React.Component {
 		
 		sdk.field.setValue({...this.state, maxNumberChildrenFree: change}).then(v => {
 			this.setState({...v});
-			console.log(v);
+			console.log({handlemaxNumberChildrenFree: v});
 		});			
 	}
 	
 	render(){
 		const {sdk} = this.props;
 		const {enabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree} = this.state;
-		const cellHeight = 23;
-		
-		const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns}) => {
-
-			const tableHeight = (maxPriceRows+2)*cellHeight;
-			const GetTable = ({seasonId, priceType}) => (
-				<div style={{height: tableHeight}}>
-					<HotTable
-						licenseKey={'non-commercial-and-evaluation'}
-						data={seasons[seasonId][priceType]} 
-						maxRows={maxPriceRows}
-						colHeaders={colHeaders}
-						rowHeaders={true}
-						columns={columns}
-						colWidths={150}
-						width={'100%'}
-						height={(maxPriceRows+2)*cellHeight}
-						afterChange={change => {this.handlePriceChange({change, sdk, seasonId, priceType})}}
-					/>
-				</div>
-			);
-			
-			const GetDate = ({seasonId}) => {
-				
-				const maxDateRows = seasons[seasonId].dates.length;
-				const tableHeight = (maxDateRows+2)*cellHeight;
-				return (
-					<div>
-						<SelectField
-							value={maxDateRows}
-							onChange={(change) => {this.handleDateRowChange({sdk, change, seasonId})}}
-							>
-							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-						</SelectField>				
-						<br/>
-						<SectionHeading>{'Date Ranges'}</SectionHeading>
-						<br/>
-						<div style={{height: tableHeight}}>
-							<HotTable
-								licenseKey={'non-commercial-and-evaluation'}
-								data={seasons[seasonId].dates} 
-								maxRows={maxDateRows}
-								colHeaders={['From', 'To']}
-								rowHeaders={true}
-								width={'100%'}
-								colWidths={150}
-								placeholder={'yyyy-mm-dd'}
-								columns={[dateColumn, dateColumn]}
-								height={tableHeight}
-								afterChange={(change) => {this.handleDateChange({change, sdk, seasonId})}}
-							/>
-						</div>
-					</div>				
-				);
-			};
-			
-			const output = Object.keys(seasons).map(k => {
-				const seasonName = seasons[k].name;
-				
-				const getIcon = () => {
-					const i = (selectedSeasonTab === k) ? 'ChevronUp' : 'ChevronDown';
-					
-					return (
-						<Paragraph>{k} <Icon icon={i} style={{'float': 'left', marginRight: '10px'}}/></Paragraph>
-					);
-				};
 						
-				return (
-					<div key={k} style={{border: '1px solid #dddddd', padding: '10px', marginBottom: '20px'}}>
-						<div 
-							style={{
-								backgroundColor: '#eeeeee', 
-								borderTop: 'solid 1px #dddddd',
-								borderRight: 'solid 1px #dddddd',
-								borderLeft: 'solid 1px #dddddd',
-								padding: '10px',
-								width: '100%',
-								display: 'block',
-								boxSizing: 'border-box',
-								cursor: 'pointer'
-							}}
-							onClick={() => {this.handleSeasonAccordion({sdk, change: k})}}
-							htmlFor={k} >
-							{getIcon()}
-						</div>
-						{selectedSeasonTab === k ? (
-							<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>	
-								<FormLabel htmlFor={`rename_season_${k}`}>{'Rename Season'}</FormLabel>
-								
-								<TextInput
-									id={`rename_season_${k}`}
-									value={k !== seasonName && seasonName ? seasonName : ''}
-									onBlur={change =>{this.handleSeasonRename({change, sdk, seasonId: k})}}
-								/>
-							
-								<br/>
-							
-								<Subheading>
-									{k.toUpperCase()}{k !== seasonName ? ` - ${seasonName}` : ''}
-								</Subheading>
-								<br/>
-								{k !== 'season_1' ? 
-									<>
-									<SectionHeading>{'Number of Dates'}</SectionHeading>
-									<br/>
-									<GetDate seasonId={k} />
-									<br/>
-									</>
-									: ''
-								}
-								<SectionHeading>{'Fixed Price'}</SectionHeading>
-								<br/>
-								<GetTable seasonId={k} priceType={'fixed'} />
-								<br/>
-								<SectionHeading>{'Variable Price'}</SectionHeading>
-								<br/>
-								<GetTable seasonId={k} priceType={'dynamic'} />
-							</div>
-						) : ''}
-					</div>
-				);
-			});
-			
-			return (
-				<div>
-					<SectionHeading>Select a Season</SectionHeading>
-					<br/>
-					{output}
-				</div>
-			);
-		};
-				
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				
@@ -531,51 +401,79 @@ class Field extends React.Component {
 							/>
 						</FormLabel>
 					
-						<SelectField
+						<FormLabel htmlFor={'childrenFreeUpToYearsOld'}>
+							{`Children free of cost up to ${childrenFreeUpToYearsOld} years old`}
+						</FormLabel>
+						<Select
+							id={'childrenFreeUpToYearsOld'}
 							value={childrenFreeUpToYearsOld}
-							labelText={`Children free of cost up to ${childrenFreeUpToYearsOld} years old`} 
+							isDisabled={enabled === false}
 							onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenFreeUpToYearsOld', change})}}>
 							{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-						</SelectField>
+						</Select>
 						
 						{childrenFreeUpToYearsOld > 0 ? (
-							<SelectField
-								value={maxNumberChildrenFree}
-								labelText={`Up to ${maxNumberChildrenFree} children are allowed to book free of cost`} 
-								onChange={(change) => {this.handlemaxNumberChildrenFree({sdk, change})}}>
-								{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-							</SelectField>
+							<>
+								<FormLabel htmlFor={'maxNumberChildrenFree'}>
+									{`Up to ${maxNumberChildrenFree} children are allowed to book free of cost`}
+								</FormLabel>						
+								<Select
+									id={'maxNumberChildrenFree'}
+									value={maxNumberChildrenFree}
+									isDisabled={enabled === false}
+									onChange={(change) => {this.handlemaxNumberChildrenFree({sdk, change})}}>
+									{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
+								</Select>
+							</>
 						) : ''}
 						
-						<SelectField
+						
+						<FormLabel htmlFor={'childrenDiscount'}>
+							{`Children discount up to ${childrenDiscount} years old`}
+						</FormLabel>					
+						<Select
+							id={'childrenDiscount'}
 							value={childrenDiscount}
-							labelText={`Children discount up to ${childrenDiscount} years old`} 
+							isDisabled={enabled === false}
 							onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenDiscount', change})}}>
 							{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-						</SelectField>
+						</Select>
 						
-						<SelectField
+						
+						<FormLabel htmlFor={'womenPricing'}>
+							{'Women Pricing'}
+						</FormLabel>						
+						<Select
+							id={'womenPricing'}
 							value={womenPricing}
-							labelText={'Women Pricing'} 
+							isDisabled={enabled === false}
 							onChange={(change) => {this.handleVariablePricing({sdk, type: 'womenPricing', change})}}>
 							<Option value={0}>{'Regular Rate'}</Option>
 							<Option value={1}>{'Grant Discount'}</Option>
 							<Option value={2}>{'Free of Cost'}</Option>
-						</SelectField>				
+						</Select>				
 						
-						<SelectField
+						<FormLabel htmlFor={'maxPriceRows'}>
+							{'Maximum Number of Prices Participants'}
+						</FormLabel>						
+						<Select
+							id={'maxPriceRows'}
 							value={maxPriceRows}
-							labelText="Maximum Number of Prices Per Person" 
+							isDisabled={enabled === false}
 							onChange={change =>{this.handlePriceRowChange({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-						</SelectField>
+						</Select>
 						
-						<SelectField
+						<FormLabel htmlFor={'seasonsNumber'}>
+							{'Number of Seasons'}
+						</FormLabel>						
+						<Select
+							id={'seasonsNumber'}
 							value={Object.keys(seasons).length}
-							labelText="Number of Seasons" 
+							isDisabled={enabled === false}
 							onChange={change =>{this.handleSeasonsNumber({change, sdk})}}>
 							{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-						</SelectField>
+						</Select>
 					
 					<RenderHotTable
 						sdk={sdk}
@@ -583,6 +481,13 @@ class Field extends React.Component {
 						maxPriceRows={maxPriceRows} 
 						colHeaders={colHeaders}
 						columns={columns}
+						selectedSeasonTab={selectedSeasonTab}
+						enabled={enabled}
+						handlePriceChange={this.handlePriceChange}
+						handleDateRowChange={this.handleDateRowChange}
+						handleDateChange={this.handleDateChange}
+						handleSeasonAccordion={this.handleSeasonAccordion}
+						handleSeasonRename={this.handleSeasonRename}
 					/>	
 					
 				</Form>
