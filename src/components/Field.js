@@ -20,6 +20,7 @@ const defaultState = {
 	childrenEnabled: false,
 	womenEnabled: false,
 	seasonsEnabled: false,
+	variablePricesEnabled: false,
 	maxPriceRows: 2,
 	seasons: {season_1: {
 		fixed: [...Array(2)].map(r => ['']),
@@ -31,7 +32,7 @@ const defaultState = {
 	maxNumberChildrenFree: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
-	colHeaders: ['Participants'],
+	colHeaders: ['Prices Per Person'],
 	columns: [column],
 	updateHeight: false,
 	selectedSeasonTab: 'season_1'
@@ -105,6 +106,14 @@ class Field extends React.Component {
 				{
 					args.seasons = {season_1: args.seasons.season_1};
 				}
+				else if(type === 'variablePricesEnabled')
+				{
+					for(let k in args.seasons)
+					{
+						args.seasons[k].dynamic = args.seasons[k].dynamic
+							.map(r => r.map(r2 => ''));						
+					}
+				}
 			}
 		}
 		
@@ -121,7 +130,7 @@ class Field extends React.Component {
 
 		let cols = {
 			colHeaders: {
-				persons: 'Participants',
+				persons: 'Prices Per Person',
 				womenPricing: '',
 				childrenDiscount: ''
 			},
@@ -422,11 +431,8 @@ class Field extends React.Component {
 	
 	render(){
 		const {sdk} = this.props;
-		
-		
-		//sdk.field.setValue(defaultState);
-		
-		const {enabled, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree} = this.state;
+				
+		const {enabled, variablePricesEnabled, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree} = this.state;
 		
 		const RenderSwitch = ({label, type, status}) => {
 			label = label + ' ';
@@ -456,6 +462,10 @@ class Field extends React.Component {
 					{enabled ? <>
 					
 						<div style={{marginBottom: '1.5rem'}}>
+							<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} />
+						</div>					
+					
+						<div style={{marginBottom: '1.5rem'}}>
 							<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} />
 						</div>
 						
@@ -469,7 +479,7 @@ class Field extends React.Component {
 						
 						<div style={{marginBottom: '1.5rem'}}>
 							<FormLabel htmlFor={'maxPriceRows'}>
-								{'Maximum Number of Prices Participants'}
+								{'Maximum Number of Price Rows'}
 							</FormLabel>						
 							<Select
 								id={'maxPriceRows'}
@@ -560,6 +570,7 @@ class Field extends React.Component {
 							columns={columns}
 							selectedSeasonTab={selectedSeasonTab}
 							enabled={enabled}
+							variablePricesEnabled={variablePricesEnabled}
 							handlePriceChange={this.handlePriceChange}
 							handleDateRowChange={this.handleDateRowChange}
 							handleDateChange={this.handleDateChange}

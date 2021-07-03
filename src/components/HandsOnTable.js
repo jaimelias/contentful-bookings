@@ -82,7 +82,7 @@ const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 	);
 };
 
-export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns, enabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleSeasonRename}) => {
+export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleSeasonRename}) => {
 
 	const priceTableArgs = {seasons, maxPriceRows, colHeaders, columns, handlePriceChange, sdk, enabled};
 	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, sdk, handleDateChange, enabled};
@@ -131,10 +131,14 @@ export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns,
 						<SectionHeading>{'Fixed Price'}</SectionHeading>
 						<br/>
 						<GetPricingTable seasonId={k} priceType={'fixed'} priceTableArgs={priceTableArgs}/>
-						<br/>
-						<SectionHeading>{'Variable Price'}</SectionHeading>
-						<br/>
-						<GetPricingTable seasonId={k} priceType={'dynamic'} priceTableArgs={priceTableArgs} />
+						{variablePricesEnabled 
+						? <>
+							<br/>
+							<SectionHeading>{'Variable Price'}</SectionHeading>
+							<br/>
+							<GetPricingTable seasonId={k} priceType={'dynamic'} priceTableArgs={priceTableArgs} />				
+						</> 
+						: ''}
 					</div>
 				) : ''}
 			</div>
