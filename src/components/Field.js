@@ -4,26 +4,8 @@ import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 import {RenderHotTable} from './HandsOnTable.js';
 import {RenderSwitch} from './FormElements.js';
-const priceKeys = ['fixed', 'variable']
-const isNumber = val => !isNaN(Number(val));
-const column = {type: 'numeric'};
-const isValidDate = str => {
-	const regEx = /^\d{4}-\d{2}-\d{2}$/;
-	if(!str.match(regEx)) return false;  
-	let d = new Date(str);
-	const dNum = d.getTime();
-	if(!dNum && dNum !== 0) return false;
-	return d.toISOString().slice(0,10) === str;
-};
-
-const durationsPluralSingular = {
-	minutes: 'Minute',
-	hours: 'Hour',
-	days: 'Day',
-	nights: 'Night',
-	weeks: 'Week',
-	months: 'Month',
-};
+import {isNumber, isValidDate, durationsPluralSingular} from './utilities.js';
+const priceKeys = ['fixed', 'variable'];
 
 const defaultState = {
 	enabled: false,
@@ -34,7 +16,7 @@ const defaultState = {
 	seasonsEnabled: false,
 	variablePricesEnabled: false,
 	variablePricesLast: false,
-	maxPriceRows: 2,
+	maxParticipants: 2,
 	seasons: {season_1: {
 		fixed: [...Array(2)].map(r => ['']),
 		variable: [...Array(2)].map(r => ['']),
@@ -46,10 +28,10 @@ const defaultState = {
 	childrenDiscount: 0,
 	womenPricing: 0,
 	colHeaders: ['Participants'],
-	columns: [column],
+	columns: [{type: 'numeric'}],
 	updateHeight: false,
 	selectedSeasonTab: 'season_1'
-}
+};
 
 class Field extends React.Component {
 	constructor(props){
@@ -157,9 +139,9 @@ class Field extends React.Component {
 				childrenDiscount: ''
 			},
 			columns: {
-				persons: column,
-				womenPricing: column,
-				childrenDiscount: column
+				persons: {type: 'numeric'},
+				womenPricing: {type: 'numeric'},
+				childrenDiscount: {type: 'numeric'}
 			},				
 		};
 		
@@ -239,7 +221,7 @@ class Field extends React.Component {
 	handleSeasonsNumber({change, sdk})
 	{
 		change = parseInt(change.target.value);
-		let {seasons, maxPriceRows, womenPricing, childrenDiscount} = this.state;
+		let {seasons, maxParticipants, womenPricing, childrenDiscount} = this.state;
 		const countSeasons = Object.keys(seasons).length;
 		let seasonRowTemplate = [''];
 		
@@ -253,8 +235,8 @@ class Field extends React.Component {
 		}
 
 		const blankSeason = {
-			fixed: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
-			variable: [...Array(maxPriceRows)].map(r => seasonRowTemplate),
+			fixed: [...Array(maxParticipants)].map(r => seasonRowTemplate),
+			variable: [...Array(maxParticipants)].map(r => seasonRowTemplate),
 			dates: [['', '']]
 		};
 		
@@ -347,9 +329,9 @@ class Field extends React.Component {
 	};
 	handlePriceRowChange({change, sdk}){
 		
-		let {seasons, maxPriceRows, womenPricing, childrenDiscount} = {...this.state};
+		let {seasons, maxParticipants, womenPricing, childrenDiscount} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
-		const oldmaxPriceRows = parseInt(maxPriceRows);
+		const oldmaxParticipants = parseInt(maxParticipants);
 		let addNulls = [''];
 		
 		if(womenPricing === 1)
@@ -369,7 +351,7 @@ class Field extends React.Component {
 			}			
 		}
 		
-		if(oldmaxPriceRows !== newMaxRows)
+		if(oldmaxParticipants !== newMaxRows)
 		{
 			for(let s in seasons)
 			{
@@ -379,16 +361,16 @@ class Field extends React.Component {
 					{
 						seasons[s][t] = seasons[s][t].filter((r, i) => (i+1) <= newMaxRows);
 						
-						if(newMaxRows > oldmaxPriceRows)
+						if(newMaxRows > oldmaxParticipants)
 						{
-							const dif = newMaxRows-oldmaxPriceRows;				
+							const dif = newMaxRows-oldmaxParticipants;				
 							[...Array(dif)].forEach(r => seasons[s][t].push(addNulls));
 						}						
 					}
 				}
 			}
 			
-			sdk.field.setValue({...this.state, seasons, maxPriceRows: newMaxRows, updateHeight: true}).then(v => {
+			sdk.field.setValue({...this.state, seasons, maxParticipants: newMaxRows, updateHeight: true}).then(v => {
 				this.setState({...v});
 				console.log({handlePriceRowChange: v});
 			});
@@ -397,16 +379,16 @@ class Field extends React.Component {
 	handleDateRowChange({sdk, seasonId, change}){
 		let {seasons} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
-		const oldmaxPriceRows = parseInt(seasons[seasonId].dates.length);
+		const oldmaxParticipants = parseInt(seasons[seasonId].dates.length);
 		let addNulls = ['', ''];
 				
-		if(oldmaxPriceRows !== newMaxRows)
+		if(oldmaxParticipants !== newMaxRows)
 		{
 			seasons[seasonId].dates = seasons[seasonId].dates.filter((r, i) => (i+1) <= newMaxRows);
 			
-			if(newMaxRows > oldmaxPriceRows)
+			if(newMaxRows > oldmaxParticipants)
 			{
-				const dif = newMaxRows-oldmaxPriceRows;				
+				const dif = newMaxRows-oldmaxParticipants;				
 				[...Array(dif)].forEach(r => seasons[seasonId].dates.push(addNulls));
 			}				
 		
@@ -419,6 +401,7 @@ class Field extends React.Component {
 	
 	handleInput({change, sdk, type}){
 		let {seasons} = {...this.state};
+				
 		change = change.target.value;
 		let args = {[type]: change};
 		const parseToInt = ['maxNumberChildrenFree', 'duration'];
@@ -469,7 +452,7 @@ class Field extends React.Component {
 	render(){
 		const {sdk} = this.props;
 						
-		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree, durationUnit, duration} = this.state;
+		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipants, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree, durationUnit, duration} = this.state;
 				
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
@@ -503,12 +486,12 @@ class Field extends React.Component {
 						</div>
 						
 						<div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'maxPriceRows'}>
+							<FormLabel htmlFor={'maxParticipants'}>
 								{'Maximum Number of Price Rows'}
 							</FormLabel>						
 							<Select
-								id={'maxPriceRows'}
-								value={maxPriceRows}
+								id={'maxParticipants'}
+								value={maxParticipants}
 								isDisabled={enabled === false}
 								onChange={change =>{this.handlePriceRowChange({change, sdk})}}>
 								{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
@@ -614,7 +597,7 @@ class Field extends React.Component {
 						<RenderHotTable
 							sdk={sdk}
 							seasons={seasons}
-							maxPriceRows={maxPriceRows} 
+							maxParticipants={maxParticipants} 
 							colHeaders={colHeaders}
 							columns={columns}
 							selectedSeasonTab={selectedSeasonTab}

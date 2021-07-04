@@ -55,15 +55,15 @@ const GetDateTable = ({seasonId, dateTableArgs}) => {
 
 const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 	
-	const {seasons, maxPriceRows, colHeaders, columns, handlePriceChange, sdk, enabled} = priceTableArgs;
-	const tableHeight = (maxPriceRows+2)*cellHeight;
+	const {seasons, maxParticipants, colHeaders, columns, handlePriceChange, sdk, enabled} = priceTableArgs;
+	const tableHeight = (maxParticipants+2)*cellHeight;
 	
 	return (
 		<div style={{height: tableHeight}}>
 			<HotTable
 				licenseKey={'non-commercial-and-evaluation'}
 				data={seasons[seasonId][priceType]} 
-				maxRows={maxPriceRows}
+				maxRows={maxParticipants}
 				colHeaders={colHeaders}
 				rowHeaders={true}
 				columns={columns.map(r => {
@@ -75,16 +75,16 @@ const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 				})}
 				colWidths={colWidths}
 				width={'100%'}
-				height={(maxPriceRows+2)*cellHeight}
+				height={(maxParticipants+2)*cellHeight}
 				afterChange={change => {handlePriceChange({change, sdk, seasonId, priceType})}}
 			/>
 		</div>	
 	);
 };
 
-export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
+export const RenderHotTable = ({sdk, seasons, maxParticipants, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
 
-	const priceTableArgs = {seasons, maxPriceRows, colHeaders, columns, handlePriceChange, sdk, enabled};
+	const priceTableArgs = {seasons, maxParticipants, colHeaders, columns, handlePriceChange, sdk, enabled};
 	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, sdk, handleDateChange, enabled};
 	
 	const countSeasons = Object.keys(seasons).length;
@@ -123,6 +123,7 @@ export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns,
 								isReadOnly={enabled === false}
 								value={k !== seasonName && seasonName ? seasonName : ''}
 								onBlur={change =>{handleInput({change, sdk, type: k})}}
+								onChange={change =>{handleInput({change, sdk, type: k})}}
 							/>
 							<br/>
 							<br/>							
