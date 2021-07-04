@@ -265,7 +265,7 @@ class Field extends React.Component {
 		{
 			dif = change-countSeasons;			
 			[...Array(dif)].forEach((r, i) => {
-				const seasonName = 'seasons_' + (startCounter + i);
+				const seasonName = 'season_' + (startCounter + i);
 				seasons[seasonName] = {...blankSeason, name: seasonName};
 			});			
 		}
@@ -275,12 +275,12 @@ class Field extends React.Component {
 			[...Array(countSeasons)].forEach((r, i) => {
 				if((i+1) > (countSeasons-dif))
 				{
-					delete seasons['seasons_' + (i + 1)];
+					delete seasons['season_' + (i + 1)];
 				}
 			});			
 		}
-				
-		sdk.field.setValue({...this.state, seasons, updateHeight: true}).then(v => {
+						
+		sdk.field.setValue({...this.state, seasons, selectedSeasonTab: `season_${change}`, updateHeight: true}).then(v => {
 			this.setState({...v});
 			console.log({handleSeasonsNumber: v});
 		});

@@ -87,6 +87,8 @@ export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns,
 	const priceTableArgs = {seasons, maxPriceRows, colHeaders, columns, handlePriceChange, sdk, enabled};
 	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, sdk, handleDateChange, enabled};
 	
+	const countSeasons = Object.keys(seasons).length;
+		
 	const output = Object.keys(seasons).map(k => {
 		const seasonName = seasons[k].name;
 		
@@ -100,25 +102,32 @@ export const RenderHotTable = ({sdk, seasons, maxPriceRows, colHeaders, columns,
 				
 		return (
 			<div key={k} style={{border: '1px solid #dddddd', padding: '10px', marginBottom: '20px'}}>
-				<div 
-					style={accordionStyle}
-					onClick={() => {handleSeasonAccordion({sdk, change: k})}}
-					htmlFor={k} >
-					{getIcon()}
-				</div>
-				{selectedSeasonTab === k ? (
+				
+				{countSeasons > 1 ? <>
+					<div 
+						style={accordionStyle}
+						onClick={() => {handleSeasonAccordion({sdk, change: k})}}
+						htmlFor={k} >
+						{getIcon()}
+					</div>				
+				</> : ''}
+				
+				{selectedSeasonTab === k || (k === 'season_1' && countSeasons === 1) ? (
 					<div id={k} style={{marginTop: '20px', marginBottom: '20px'}}>	
-						<SectionHeading>{'Rename Season'}</SectionHeading>
-						<br/>
-						<TextInput
-							id={`rename_season_${k}`}
-							isReadOnly={enabled === false}
-							value={k !== seasonName && seasonName ? seasonName : ''}
-							onBlur={change =>{handleInput({change, sdk, type: k})}}
-						/>
-
-						<br/>
-						<br/>
+					
+						{countSeasons > 1 ? <>
+							<SectionHeading>{'Rename Season'}</SectionHeading>
+							<br/>
+							<TextInput
+								id={`rename_season_${k}`}
+								isReadOnly={enabled === false}
+								value={k !== seasonName && seasonName ? seasonName : ''}
+								onBlur={change =>{handleInput({change, sdk, type: k})}}
+							/>
+							<br/>
+							<br/>							
+						</> : ''}
+					
 						{k !== 'season_1' ? 
 							<>
 							<SectionHeading>{'Number of Dates'}</SectionHeading>
