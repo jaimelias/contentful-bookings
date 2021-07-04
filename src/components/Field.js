@@ -16,16 +16,24 @@ const isValidDate = str => {
 	return d.toISOString().slice(0,10) === str;
 };
 
-const durationUnits = ['minutes', 'hours', 'days', 'nights', 'weeks', 'months'];
+const durationsPluralSingular = {
+	minutes: 'Minute',
+	hours: 'Hour',
+	days: 'Day',
+	nights: 'Night',
+	weeks: 'Week',
+	months: 'Month',
+};
 
 const defaultState = {
 	enabled: false,
 	duration: 1,
-	durationUnit: durationUnits[1],
+	durationUnit: 'hours',
 	childrenEnabled: false,
 	womenEnabled: false,
 	seasonsEnabled: false,
 	variablePricesEnabled: false,
+	variablePricesLast: false,
 	maxPriceRows: 2,
 	seasons: {season_1: {
 		fixed: [...Array(2)].map(r => ['']),
@@ -63,8 +71,16 @@ class Field extends React.Component {
 	forceUpdateHeight({sdk, thisWindow, updateHeight}){
 		if(updateHeight)
 		{
+			if(this.state.enabled)
+			{
 				sdk.window.updateHeight(this.divRef.clientHeight);
-				this.setState({...this.state, updateHeight: false});
+			}
+			else
+			{
+				sdk.window.updateHeight();
+			}
+				
+			this.setState({...this.state, updateHeight: false});
 		}		
 	};
 	componentDidMount()
@@ -111,7 +127,9 @@ class Field extends React.Component {
 					args.seasons = {season_1: args.seasons.season_1};
 				}
 				else if(type === 'variablePricesEnabled')
-				{
+				{	
+					args.variablePricesLast = false;
+					
 					for(let k in args.seasons)
 					{
 						args.seasons[k].variable = args.seasons[k].variable
@@ -451,8 +469,8 @@ class Field extends React.Component {
 	render(){
 		const {sdk} = this.props;
 						
-		const {enabled, variablePricesEnabled, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree, durationUnit, duration} = this.state;
-		
+		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxPriceRows, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree, durationUnit, duration} = this.state;
+				
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				
@@ -464,7 +482,13 @@ class Field extends React.Component {
 					
 						<div style={{marginBottom: '1.5rem'}}>
 							<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} sdk={sdk} handleSwitch={this.handleSwitch} />
-						</div>					
+						</div>	
+						
+						{variablePricesEnabled ? <>
+							<div style={{marginBottom: '1.5rem'}}>
+								<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} type={'variablePricesLast'} status={variablePricesLast} sdk={sdk} handleSwitch={this.handleSwitch} />
+							</div>						
+						</> : ''}
 					
 						<div style={{marginBottom: '1.5rem'}}>
 							<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} sdk={sdk} handleSwitch={this.handleSwitch} />
@@ -500,7 +524,7 @@ class Field extends React.Component {
 								value={durationUnit}
 								isDisabled={enabled === false}
 								onChange={(change) => {this.handleInput({sdk, change, type: 'durationUnit'})}}>
-								{durationUnits.map(r => <Option key={r} value={r}>{r}</Option>)}
+								{Object.keys(durationsPluralSingular).map(r => <Option key={r} value={r}>{r}</Option>)}
 							</Select>
 						</div>
 						
