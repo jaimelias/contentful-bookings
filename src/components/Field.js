@@ -16,19 +16,21 @@ const defaultState = {
 	seasonsEnabled: false,
 	variablePricesEnabled: false,
 	variablePricesLast: false,
-	maxParticipants: 2,
+	maxParticipants: 1,
 	seasons: {season_1: {
-		fixed: [...Array(2)].map(r => ['']),
-		variable: [...Array(2)].map(r => ['']),
+		fixed: [{pax1: ''}],
+		variable: [{pax1: ''}],
 		name: 'Default Prices',
-		dates: [['', '']]
+		dates: [{from: '', to: ''}]
 	}},
 	childrenFreeUpToYearsOld: 0,
 	maxNumberChildrenFree: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
 	colHeaders: ['Participants'],
-	columns: [{type: 'numeric'}],
+	columns: [
+		{type: 'numeric', data: 'pax1'}
+	],
 	updateHeight: false,
 	selectedSeasonTab: 'season_1'
 };
@@ -139,10 +141,10 @@ class Field extends React.Component {
 				childrenDiscount: ''
 			},
 			columns: {
-				persons: {type: 'numeric'},
-				womenPricing: {type: 'numeric'},
-				childrenDiscount: {type: 'numeric'}
-			},				
+				persons: {type: 'numeric', data: 'pax1'},
+				womenPricing: {type: 'numeric', data: 'women'},
+				childrenDiscount: {type: 'numeric', data: 'children'}
+			},
 		};
 		
 		if(womenPricing === 1 && type !== 'womenPricing')
@@ -197,14 +199,16 @@ class Field extends React.Component {
 						
 						if(addNull)
 						{
+							if(type === 'womenPricing')
+							{
+								r.women = '';
+							}
+							else if(type === 'childrenDiscount')
+							{
+								r.children = '';
+							}
+						}
 
-							r.push('');
-						}
-						else
-						{
-							r.pop();
-						}
-						
 						return r;
 					});					
 				}
@@ -223,21 +227,21 @@ class Field extends React.Component {
 		change = parseInt(change.target.value);
 		let {seasons, maxParticipants, womenPricing, childrenDiscount} = this.state;
 		const countSeasons = Object.keys(seasons).length;
-		let seasonRowTemplate = [''];
+		let seasonRowTemplate = {pax1: ''};
 		
 		if(womenPricing === 1)
 		{
-			seasonRowTemplate.push('');
+			seasonRowTemplate = {...seasonRowTemplate, women: ''};
 		}
 		if(childrenDiscount > 0)
 		{
-			seasonRowTemplate.push('');
+			seasonRowTemplate = {...seasonRowTemplate, children: ''};
 		}
 
 		const blankSeason = {
 			fixed: [...Array(maxParticipants)].map(r => seasonRowTemplate),
 			variable: [...Array(maxParticipants)].map(r => seasonRowTemplate),
-			dates: [['', '']]
+			dates: [{from: '', to: ''}]
 		};
 		
 		let startCounter = countSeasons + 1;
@@ -278,15 +282,15 @@ class Field extends React.Component {
 			{
 				change.forEach(o => {
 					
-					const [row, col, oldValue, newValue] = o;
+					const [row, prop, oldValue, newValue] = o;
 
 					if(oldValue !== newValue && !isNaN(newValue))
 					{
-						seasons[seasonId][priceType][row][col] = newValue;
+						seasons[seasonId][priceType][row][prop] = newValue;
 					}
 					else
 					{
-						seasons[seasonId][priceType][row][col] = '';
+						seasons[seasonId][priceType][row][prop] = '';
 					}
 				});
 																
@@ -308,15 +312,15 @@ class Field extends React.Component {
 			{
 				change.forEach(o => {
 					
-					const [row, col, oldValue, newValue] = o;
+					const [row, prop, oldValue, newValue] = o;
 
 					if(oldValue !== newValue && isValidDate(newValue))
 					{
-						seasons[seasonId].dates[row][col] = newValue;
+						seasons[seasonId].dates[row][prop] = newValue;
 					}
 					else
 					{
-						seasons[seasonId].dates[row][col] = '';
+						seasons[seasonId].dates[row][prop] = '';
 					}
 				});
 																
@@ -332,23 +336,15 @@ class Field extends React.Component {
 		let {seasons, maxParticipants, womenPricing, childrenDiscount} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
 		const oldmaxParticipants = parseInt(maxParticipants);
-		let addNulls = [''];
+		let addNulls = {pax1: ''};
 		
 		if(womenPricing === 1)
 		{
-			addNulls = ['', ''];
-			
-			if(childrenDiscount > 0)
-			{
-				addNulls = ['', '', ''];
-			}
+			addNulls = {...addNulls, women: ''}
 		}
-		else
+		if(childrenDiscount > 0)
 		{
-			if(childrenDiscount > 0)
-			{
-				addNulls = ['', '', ''];
-			}			
+			addNulls = {...addNulls, children: ''}
 		}
 		
 		if(oldmaxParticipants !== newMaxRows)
@@ -363,7 +359,7 @@ class Field extends React.Component {
 						
 						if(newMaxRows > oldmaxParticipants)
 						{
-							const dif = newMaxRows-oldmaxParticipants;				
+							const dif = (newMaxRows-oldmaxParticipants);				
 							[...Array(dif)].forEach(r => seasons[s][t].push(addNulls));
 						}						
 					}
@@ -380,7 +376,7 @@ class Field extends React.Component {
 		let {seasons} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
 		const oldmaxParticipants = parseInt(seasons[seasonId].dates.length);
-		let addNulls = ['', ''];
+		let addNulls = {from: '', to: ''};
 				
 		if(oldmaxParticipants !== newMaxRows)
 		{

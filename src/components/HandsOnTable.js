@@ -42,8 +42,8 @@ const GetDateTable = ({seasonId, dateTableArgs}) => {
 					colWidths={colWidths}
 					placeholder={'yyyy-mm-dd'}
 					columns={[
-							{...dateColumn, readOnly: (enabled === false)}, 
-							{...dateColumn, readOnly: (enabled === false)}
+							{...dateColumn, data: 'from', readOnly: (enabled === false)}, 
+							{...dateColumn, data: 'to', readOnly: (enabled === false)}
 					]}
 					height={tableHeight}
 					afterChange={(change) => {handleDateChange({change, sdk, seasonId})}}
@@ -122,7 +122,6 @@ export const RenderHotTable = ({sdk, seasons, maxParticipants, colHeaders, colum
 								id={`rename_season_${k}`}
 								isReadOnly={enabled === false}
 								value={k !== seasonName && seasonName ? seasonName : ''}
-								onBlur={change =>{handleInput({change, sdk, type: k})}}
 								onChange={change =>{handleInput({change, sdk, type: k})}}
 							/>
 							<br/>
