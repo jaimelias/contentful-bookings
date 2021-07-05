@@ -45,7 +45,7 @@ class Field extends React.Component {
 		const value = sdk.field.getValue();
 		this.state = (value) ? value : defaultState;
 		this.handlePriceChange = this.handlePriceChange.bind(this);
-		this.handlePriceRowChange = this.handlePriceRowChange.bind(this);
+		this.handleMaxParticipants = this.handleMaxParticipants.bind(this);
 		this.handleVariablePricing = this.handleVariablePricing.bind(this);
 		this.forceUpdateHeight = this.forceUpdateHeight.bind(this);
 		this.handleSeasonsNumber = this.handleSeasonsNumber.bind(this);
@@ -379,7 +379,7 @@ class Field extends React.Component {
 			}
 		}		
 	};
-	handlePriceRowChange({change}){
+	handleMaxParticipants({change}){
 		
 		const {sdk} = this.props;
 		let {seasons, maxParticipants, womenPricing, childrenDiscount} = {...this.state};
@@ -417,7 +417,7 @@ class Field extends React.Component {
 			
 			sdk.field.setValue({...this.state, seasons, maxParticipants: newMaxRows, updateHeight: true}).then(v => {
 				this.setState({...v});
-				console.log({handlePriceRowChange: v});
+				console.log({handleMaxParticipants: v});
 			});
 		}
 	};	
@@ -518,7 +518,7 @@ class Field extends React.Component {
 							arr={[...Array(100)]}
 							isNumeric={true}
 							min={1}
-							handler={this.handlePriceRowChange}
+							handler={this.handleMaxParticipants}
 							enabled={enabled}
 						/>
 						
