@@ -55,7 +55,10 @@ class Field extends React.Component {
 		this.handleInput = this.handleInput.bind(this);
 		this.handleSwitch = this.handleSwitch.bind(this);
 	};
-	forceUpdateHeight({sdk, thisWindow, updateHeight}){
+	forceUpdateHeight({thisWindow, updateHeight}){
+		
+		const {sdk} = this.props;
+		
 		if(updateHeight)
 		{
 			if(this.state.enabled)
@@ -72,16 +75,16 @@ class Field extends React.Component {
 	};
 	componentDidMount()
 	{
-		const {sdk} = this.props;
-		this.forceUpdateHeight({sdk, updateHeight: true, thisWindow: window});
+		this.forceUpdateHeight({updateHeight: true, thisWindow: window});
 	};
 	componentDidUpdate()
 	{
-		const {sdk} = this.props;
 		const {updateHeight} = this.state;
-		this.forceUpdateHeight({sdk, updateHeight, thisWindow: window});
+		this.forceUpdateHeight({updateHeight, thisWindow: window});
 	};
-	handleSwitch({type, sdk, change}){
+	handleSwitch({type, change}){
+		
+		const {sdk} = this.props;
 		
 		let args = {[type]: change, updateHeight: true};
 		
@@ -140,7 +143,10 @@ class Field extends React.Component {
 			console.log({handleSwitch: v});
 		});
 	};
-	handleVariablePricing({sdk, type, change}){
+	handleVariablePricing({type, change}){
+		
+		const {sdk} = this.props;
+		
 		change = parseInt(change.target.value);
 		change = isNumber(change) ? change : 0;
 		let {childrenDiscount, womenPricing, seasons, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking} = {...this.state};
@@ -263,8 +269,9 @@ class Field extends React.Component {
 	
 	};
 	
-	handleSeasonsNumber({change, sdk})
+	handleSeasonsNumber({change})
 	{
+		const {sdk} = this.props;
 		change = parseInt(change.target.value);
 		let {seasons, maxParticipants, womenPricing, childrenDiscount} = this.state;
 		const countSeasons = Object.keys(seasons).length;
@@ -313,8 +320,8 @@ class Field extends React.Component {
 		});
 	};
 	
-	handlePriceChange({change, sdk, seasonId, priceType}){
-		
+	handlePriceChange({change, seasonId, priceType}){
+		const {sdk} = this.props;
 		let {seasons} = {...this.state};
 		
 		if(change)
@@ -343,8 +350,8 @@ class Field extends React.Component {
 		}
 	};
 	
-	handleDateChange({change, sdk, seasonId}){
-		
+	handleDateChange({change, seasonId}){
+		const {sdk} = this.props;
 		let {seasons} = {...this.state};
 		
 		if(change)
@@ -372,8 +379,9 @@ class Field extends React.Component {
 			}
 		}		
 	};
-	handlePriceRowChange({change, sdk}){
+	handlePriceRowChange({change}){
 		
+		const {sdk} = this.props;
 		let {seasons, maxParticipants, womenPricing, childrenDiscount} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
 		const oldmaxParticipants = parseInt(maxParticipants);
@@ -413,7 +421,8 @@ class Field extends React.Component {
 			});
 		}
 	};	
-	handleDateRowChange({sdk, seasonId, change}){
+	handleDateRowChange({seasonId, change}){
+		const {sdk} = this.props;
 		let {seasons} = {...this.state};
 		const newMaxRows = parseInt(change.target.value);
 		const oldmaxParticipants = parseInt(seasons[seasonId].dates.length);
@@ -436,7 +445,8 @@ class Field extends React.Component {
 		}
 	};
 	
-	handleInput({change, sdk, type, isNumeric}){
+	handleInput({change, type, isNumeric}){
+		const {sdk} = this.props;
 		let {seasons} = {...this.state};
 				
 		change = change.target.value;
@@ -464,8 +474,8 @@ class Field extends React.Component {
 		});			
 	}	
 	
-	handleSeasonAccordion({sdk, change}){
-		
+	handleSeasonAccordion({change}){
+		const {sdk} = this.props;
 		const {selectedSeasonTab} = {...this.state};
 		change = (change === selectedSeasonTab) ? '' : change;	
 
@@ -477,7 +487,6 @@ class Field extends React.Component {
 
 	
 	render(){
-		const {sdk} = this.props;
 						
 		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipants, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent} = this.state;
 		
@@ -486,22 +495,21 @@ class Field extends React.Component {
 				
 				<Form>
 					
-					<RenderSwitch label={'Prices App'} type={'enabled'} status={enabled} sdk={sdk} handler={this.handleSwitch} />
+					<RenderSwitch label={'Prices App'} type={'enabled'} status={enabled} handler={this.handleSwitch} />
 					
 					{enabled ? <>
 
-						<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} sdk={sdk} handler={this.handleSwitch} />
+						<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} handler={this.handleSwitch} />
 						
 						{variablePricesEnabled ? <>
-							<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} type={'variablePricesLast'} status={variablePricesLast} sdk={sdk} handler={this.handleSwitch} />				
+							<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} type={'variablePricesLast'} status={variablePricesLast} handler={this.handleSwitch} />				
 						</> : ''}
 					
+						<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} handler={this.handleSwitch} />
 						
-						<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} sdk={sdk} handler={this.handleSwitch} />
+						<RenderSwitch label={'Children Prices'} type={'childrenEnabled'} status={childrenEnabled}  handler={this.handleSwitch} />
 						
-						<RenderSwitch label={'Children Prices'} type={'childrenEnabled'} status={childrenEnabled}  sdk={sdk} handler={this.handleSwitch} />
-						
-						<RenderSwitch label={'Women Prices'} type={'womenEnabled'} status={womenEnabled} sdk={sdk} handler={this.handleSwitch} />
+						<RenderSwitch label={'Women Prices'} type={'womenEnabled'} status={womenEnabled}  handler={this.handleSwitch} />
 						
 						<RenderSelect 
 							label={'Max. Number of Participants'}
@@ -511,7 +519,6 @@ class Field extends React.Component {
 							isNumeric={true}
 							min={1}
 							handler={this.handlePriceRowChange}
-							sdk={sdk}
 							enabled={enabled}
 						/>
 						
@@ -523,7 +530,6 @@ class Field extends React.Component {
 							isNumeric={false}
 							min={0}
 							handler={this.handleInput}
-							sdk={sdk}
 							enabled={enabled}
 						/>
 						
@@ -535,7 +541,6 @@ class Field extends React.Component {
 							isNumeric={true}
 							min={1}
 							handler={this.handleInput}
-							sdk={sdk}
 							enabled={enabled}
 						/>					
 						
@@ -549,7 +554,6 @@ class Field extends React.Component {
 								isNumeric={true}
 								min={0}
 								handler={this.handleVariablePricing}
-								sdk={sdk}
 								enabled={enabled}
 							/>						
 						
@@ -563,7 +567,6 @@ class Field extends React.Component {
 									isNumeric={true}
 									min={0}
 									handler={this.handleInput}
-									sdk={sdk}
 									enabled={enabled}
 								/>							
 							
@@ -575,7 +578,6 @@ class Field extends React.Component {
 									isNumeric={true}
 									min={0}
 									handler={this.handleInput}
-									sdk={sdk}
 									enabled={enabled}
 								/>								
 						
@@ -589,7 +591,6 @@ class Field extends React.Component {
 									isNumeric={true}
 									min={0}
 									handler={this.handleVariablePricing}
-									sdk={sdk}
 									enabled={enabled}
 								/>
 							</> 
@@ -609,7 +610,6 @@ class Field extends React.Component {
 								isNumeric={false}
 								min={0}
 								handler={this.handleVariablePricing}
-								sdk={sdk}
 								enabled={enabled}
 							/>
 							
@@ -623,7 +623,6 @@ class Field extends React.Component {
 									isNumeric={true}
 									min={1}
 									handler={this.handleInput}
-									sdk={sdk}
 									enabled={enabled}
 								/>
 
@@ -635,7 +634,6 @@ class Field extends React.Component {
 									isNumeric={true}
 									min={1}
 									handler={this.handleInput}
-									sdk={sdk}
 									enabled={enabled}
 								/>									
 						
@@ -652,13 +650,11 @@ class Field extends React.Component {
 								isNumeric={true}
 								min={1}
 								handler={this.handleSeasonsNumber}
-								sdk={sdk}
 								enabled={enabled}
 							/>						
 						</> : ''}
 					
 						<RenderHotTable
-							sdk={sdk}
 							seasons={seasons}
 							maxParticipants={maxParticipants} 
 							colHeaders={colHeaders}

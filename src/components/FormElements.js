@@ -9,7 +9,7 @@ const switchStyle = {
 	border: 'solid 1px #dddddd'
 };
 
-export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, sdk, enabled}) => {
+export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, enabled}) => {
 				
 	return (<>
 		<div style={{marginBottom: '1.5rem'}}>
@@ -20,7 +20,7 @@ export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, 
 				id={name}
 				value={value}
 				isDisabled={enabled === false}
-				onChange={(change) => {handler({sdk, change, type: name, isNumeric})}}>
+				onChange={(change) => {handler({change, type: name, isNumeric})}}>
 				{arr.map((r, i) => {
 
 					let v;
@@ -58,7 +58,7 @@ export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, 
 	</>);
 };
 
-export const RenderSwitch = ({label, type, status, sdk, handler}) => {
+export const RenderSwitch = ({label, type, status, handler}) => {
 	label = label + ' ';
 	label += (status) ? 'Enabled' : 'Disabled';
 	
@@ -70,7 +70,7 @@ export const RenderSwitch = ({label, type, status, sdk, handler}) => {
 						id={type}
 						isChecked={status} 
 						labelText={label}
-						onToggle={(change) => {handler({type, sdk, change})}}
+						onToggle={(change) => {handler({type, change})}}
 					/>
 				</FormLabel>
 			</div>

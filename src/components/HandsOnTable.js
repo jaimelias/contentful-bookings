@@ -17,14 +17,14 @@ const accordionStyle = {
 
 const GetDateTable = ({seasonId, dateTableArgs}) => {
 	
-	const {seasons, cellHeight, handleDateRowChange, sdk, handleDateChange, enabled} = dateTableArgs;
+	const {seasons, cellHeight, handleDateRowChange, handleDateChange, enabled} = dateTableArgs;
 	const maxDateRows = seasons[seasonId].dates.length;
 	const tableHeight = (maxDateRows+2)*cellHeight;
 	return (
 		<div>
 			<Select
 				value={maxDateRows}
-				onChange={(change) => {handleDateRowChange({sdk, change, seasonId})}}
+				onChange={(change) => {handleDateRowChange({change, seasonId})}}
 				>
 				{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
 			</Select>				
@@ -46,7 +46,7 @@ const GetDateTable = ({seasonId, dateTableArgs}) => {
 							{...dateColumn, data: 'to', readOnly: (enabled === false)}
 					]}
 					height={tableHeight}
-					afterChange={(change) => {handleDateChange({change, sdk, seasonId})}}
+					afterChange={(change) => {handleDateChange({change, seasonId})}}
 				/>
 			</div>
 		</div>				
@@ -55,7 +55,7 @@ const GetDateTable = ({seasonId, dateTableArgs}) => {
 
 const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 	
-	const {seasons, maxParticipants, colHeaders, columns, handlePriceChange, sdk, enabled} = priceTableArgs;
+	const {seasons, maxParticipants, colHeaders, columns, handlePriceChange, enabled} = priceTableArgs;
 	const tableHeight = (maxParticipants+2)*cellHeight;
 	
 	return (
@@ -76,16 +76,16 @@ const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 				colWidths={colWidths}
 				width={'100%'}
 				height={(maxParticipants+2)*cellHeight}
-				afterChange={change => {handlePriceChange({change, sdk, seasonId, priceType})}}
+				afterChange={change => {handlePriceChange({change, seasonId, priceType})}}
 			/>
 		</div>	
 	);
 };
 
-export const RenderHotTable = ({sdk, seasons, maxParticipants, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
+export const RenderHotTable = ({seasons, maxParticipants, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
 
-	const priceTableArgs = {seasons, maxParticipants, colHeaders, columns, handlePriceChange, sdk, enabled};
-	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, sdk, handleDateChange, enabled};
+	const priceTableArgs = {seasons, maxParticipants, colHeaders, columns, handlePriceChange, enabled};
+	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, handleDateChange, enabled};
 	
 	const countSeasons = Object.keys(seasons).length;
 		
@@ -106,7 +106,7 @@ export const RenderHotTable = ({sdk, seasons, maxParticipants, colHeaders, colum
 				{countSeasons > 1 ? <>
 					<div 
 						style={accordionStyle}
-						onClick={() => {handleSeasonAccordion({sdk, change: k})}}
+						onClick={() => {handleSeasonAccordion({change: k})}}
 						htmlFor={k} >
 						{getIcon()}
 					</div>				
@@ -122,7 +122,7 @@ export const RenderHotTable = ({sdk, seasons, maxParticipants, colHeaders, colum
 								id={`rename_season_${k}`}
 								isReadOnly={enabled === false}
 								value={k !== seasonName && seasonName ? seasonName : ''}
-								onChange={change =>{handleInput({change, sdk, type: k})}}
+								onChange={change =>{handleInput({change, type: k})}}
 							/>
 							<br/>
 							<br/>							
