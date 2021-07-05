@@ -6,13 +6,25 @@ const switchStyle = {
 	paddingRight: '20px', 
 	paddingBottom: '10px', 
 	paddingLeft: '20px', 
-	border: 'solid 1px #dddddd'
+	border: 'solid 1px #dddddd',
+	marginBottom: '1.5rem'
 };
 
-export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, enabled}) => {
-				
+const selectStyle = {
+	marginBottom: '1.5rem'
+};
+
+const childStyle = {
+	borderLeft: 'solid 3px #cccccc',
+	marginLeft: '20px'
+};
+
+export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, enabled, isChild}) => {
+	
+	const thisStyle = (isChild) ? {...selectStyle, ...childStyle, paddingLeft: '20px'}  : selectStyle;
+	
 	return (<>
-		<div style={{marginBottom: '1.5rem'}}>
+		<div style={thisStyle}>
 			<FormLabel htmlFor={'durationUnit'}>
 				{label}
 			</FormLabel>
@@ -58,22 +70,22 @@ export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, 
 	</>);
 };
 
-export const RenderSwitch = ({label, type, status, handler}) => {
+export const RenderSwitch = ({label, type, status, handler, isChild}) => {
 	label = label + ' ';
 	label += (status) ? 'Enabled' : 'Disabled';
 	
+	const thisStyle = (isChild) ? {...switchStyle, ...childStyle}  : switchStyle;
+
 	return (
-		<div style={{marginBottom: '1.5rem'}}>
-			<div style={switchStyle}>
-				<FormLabel htmlFor={type}>
-					<Switch
-						id={type}
-						isChecked={status} 
-						labelText={label}
-						onToggle={(change) => {handler({type, change})}}
-					/>
-				</FormLabel>
-			</div>
+		<div style={thisStyle}>
+			<FormLabel htmlFor={type}>
+				<Switch
+					id={type}
+					isChecked={status} 
+					labelText={label}
+					onToggle={(change) => {handler({type, change})}}
+				/>
+			</FormLabel>
 		</div>
 	);
 }

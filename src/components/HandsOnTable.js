@@ -55,15 +55,15 @@ const GetDateTable = ({seasonId, dateTableArgs}) => {
 
 const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 	
-	const {seasons, maxParticipants, colHeaders, columns, handlePriceChange, enabled} = priceTableArgs;
-	const tableHeight = (maxParticipants+2)*cellHeight;
+	const {seasons, maxParticipantsPerBooking, colHeaders, columns, handlePriceChange, enabled} = priceTableArgs;
+	const tableHeight = (maxParticipantsPerBooking+2)*cellHeight;
 	
 	return (
 		<div style={{height: tableHeight}}>
 			<HotTable
 				licenseKey={'non-commercial-and-evaluation'}
 				data={seasons[seasonId][priceType]} 
-				maxRows={maxParticipants}
+				maxRows={maxParticipantsPerBooking}
 				colHeaders={colHeaders}
 				rowHeaders={true}
 				columns={columns.map(r => {
@@ -75,16 +75,16 @@ const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 				})}
 				colWidths={colWidths}
 				width={'100%'}
-				height={(maxParticipants+2)*cellHeight}
+				height={(maxParticipantsPerBooking+2)*cellHeight}
 				afterChange={change => {handlePriceChange({change, seasonId, priceType})}}
 			/>
 		</div>	
 	);
 };
 
-export const RenderHotTable = ({seasons, maxParticipants, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
+export const RenderHotTable = ({seasons, maxParticipantsPerBooking, colHeaders, columns, enabled, variablePriceEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
 
-	const priceTableArgs = {seasons, maxParticipants, colHeaders, columns, handlePriceChange, enabled};
+	const priceTableArgs = {seasons, maxParticipantsPerBooking, colHeaders, columns, handlePriceChange, enabled};
 	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, handleDateChange, enabled};
 	
 	const countSeasons = Object.keys(seasons).length;
@@ -139,13 +139,13 @@ export const RenderHotTable = ({seasons, maxParticipants, colHeaders, columns, e
 						}
 						<SectionHeading>{'Fixed Price Per Person'}</SectionHeading>
 						<br/>
-						<GetPricingTable seasonId={k} priceType={'fixed'} priceTableArgs={priceTableArgs}/>
-						{variablePricesEnabled 
+						<GetPricingTable seasonId={k} priceType={'fixedPrice'} priceTableArgs={priceTableArgs}/>
+						{variablePriceEnabled 
 						? <>
 							<br/>
 							<SectionHeading>{'Variable Price Per Person'}</SectionHeading>
 							<br/>
-							<GetPricingTable seasonId={k} priceType={'variable'} priceTableArgs={priceTableArgs} />				
+							<GetPricingTable seasonId={k} priceType={'variablePrice'} priceTableArgs={priceTableArgs} />				
 						</> 
 						: ''}
 					</div>
