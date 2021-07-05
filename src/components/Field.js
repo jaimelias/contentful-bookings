@@ -1,9 +1,9 @@
 import React from 'react';
-import { Select, Option, Form, FormLabel, TextInput} from '@contentful/forma-36-react-components';
+import {Form} from '@contentful/forma-36-react-components';
 import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 import {RenderHotTable} from './HandsOnTable.js';
-import {RenderSwitch} from './FormElements.js';
+import {RenderSwitch, RenderSelect} from './FormElements.js';
 import {isNumber, isValidDate, durationsPluralSingular} from './utilities.js';
 const priceKeys = ['fixed', 'variable'];
 
@@ -24,7 +24,10 @@ const defaultState = {
 		dates: [{from: '', to: ''}]
 	}},
 	childrenFreeUpToYearsOld: 0,
-	maxNumberChildrenFree: 0,
+	maxChildrenFreePerEvent: 0,
+	maxChildrenFreePerBooking: 0,
+	maxWomenFreePerBooking: 0,
+	maxWomenFreePerEvent: 0,
 	childrenDiscount: 0,
 	womenPricing: 0,
 	colHeaders: ['Participants'],
@@ -101,7 +104,7 @@ class Field extends React.Component {
 				{
 					args = {
 						...args, 
-						maxNumberChildrenFree: 0, 
+						maxChildrenFreePerEvent: 0, 
 						childrenFreeUpToYearsOld: 0, 
 						childrenDiscount: 0
 					};
@@ -117,7 +120,16 @@ class Field extends React.Component {
 					for(let k in args.seasons)
 					{
 						args.seasons[k].variable = args.seasons[k].variable
-							.map(r => r.map(r2 => ''));						
+							.map(r => {
+								let output = {};
+								
+								for(let k2 in r)
+								{
+									output[k2] = '';
+								}
+								
+								return output;
+							});
 					}
 				}
 			}
@@ -131,59 +143,86 @@ class Field extends React.Component {
 	handleVariablePricing({sdk, type, change}){
 		change = parseInt(change.target.value);
 		change = isNumber(change) ? change : 0;
-		let {childrenDiscount, womenPricing, seasons} = {...this.state};
+		let {childrenDiscount, womenPricing, seasons, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking} = {...this.state};
 		let addNull = false;
 
 		let cols = {
 			colHeaders: {
-				persons: 'Participants',
-				womenPricing: '',
-				childrenDiscount: ''
+				pax1: 'Participants',
+				women: '',
+				children: ''
 			},
 			columns: {
-				persons: {type: 'numeric', data: 'pax1'},
-				womenPricing: {type: 'numeric', data: 'women'},
-				childrenDiscount: {type: 'numeric', data: 'children'}
+				pax1: {type: 'numeric', data: 'pax1'},
+				women: {type: 'numeric', data: 'women'},
+				children: {type: 'numeric', data: 'children'}
 			},
 		};
 		
 		if(womenPricing === 1 && type !== 'womenPricing')
 		{
 			addNull = true;
-			cols.colHeaders = {...cols.colHeaders, persons: 'Men', womenPricing: 'Women'};
+			cols.colHeaders = {...cols.colHeaders, pax1: 'Men', women: 'Women'};
 		}
 		else
-		{
-			if(type === 'womenPricing' && change === 1)
+		{			
+			if(type === 'womenPricing')
 			{
-				addNull = true;
-				cols.colHeaders = {...cols.colHeaders, persons: 'Men', womenPricing: 'Women'};
+				if(change !== 2)
+				{
+					maxWomenFreePerBooking = 0;
+					maxWomenFreePerEvent = 0;
+					
+					if(change === 1)
+					{
+						addNull = true;
+						cols.colHeaders = {...cols.colHeaders, pax1: 'Men', women: 'Women'};					
+					}
+					else
+					{
+						delete cols.colHeaders.womenPricing;
+						delete cols.columns.womenPricing;					
+					}
+				}
+				else
+				{
+					maxWomenFreePerBooking = 1;
+					maxWomenFreePerEvent = 1;					
+					delete cols.colHeaders.women;
+					delete cols.columns.women;					
+				}
 			}
 			else
 			{
-				delete cols.colHeaders.womenPricing;
-				delete cols.columns.womenPricing;				
+				delete cols.colHeaders.women;
+				delete cols.columns.women;				
 			}
 		}
-
 		
 		if(childrenDiscount > 0 && type !== 'childrenDiscount')
 		{
 			addNull = true;
-			cols.colHeaders = {...cols.colHeaders, childrenDiscount: `Child Up to ${change} years old`};
+			cols.colHeaders = {...cols.colHeaders, children: `Child Up to ${change} years old`};
 		}
 		else
 		{
 			if(type === 'childrenDiscount' && change > 0)
 			{
 				addNull = true;
-				cols.colHeaders = {...cols.colHeaders, childrenDiscount: `Children up to ${change} years old`};
+				cols.colHeaders = {...cols.colHeaders, children: `Child Up to ${change} years old`};
 			}
 			else
 			{
-				delete cols.colHeaders.childrenDiscount;
-				delete cols.columns.childrenDiscount;				
+				delete cols.colHeaders.children;
+				delete cols.columns.children;				
 			}
+		}
+		
+		
+		if(type === 'childrenFreeUpToYearsOld' && change === 0)
+		{
+			maxChildrenFreePerEvent = 0;
+			maxChildrenFreePerBooking = 0;
 		}
 		
 		const colHeaders = Object.values(cols.colHeaders);
@@ -215,7 +254,9 @@ class Field extends React.Component {
 			}
 		}
 		
-		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [type]: change, updateHeight: true}).then(v => {
+		
+		
+		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [type]: change, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking, updateHeight: true}).then(v => {
 			this.setState({...v});
 			console.log({handleVariablePricing: v});
 		});
@@ -395,26 +436,16 @@ class Field extends React.Component {
 		}
 	};
 	
-	handleInput({change, sdk, type}){
+	handleInput({change, sdk, type, isNumeric}){
 		let {seasons} = {...this.state};
 				
 		change = change.target.value;
 		let args = {[type]: change};
-		const parseToInt = ['maxNumberChildrenFree', 'duration'];
-		const min1Required = ['duration'];
-		
+
 		//turns values to INT
-		if(parseToInt.includes(type))
+		if(isNumeric)
 		{
-			change = parseInt(change);
-			
-			// set minimum value as 1
-			if(min1Required.includes(type) && change < 1)
-			{
-				change = 1;
-			}
-			
-			args = {[type]: change};
+			args = {[type]: parseInt(change)};
 		}
 		
 		//season rename
@@ -448,147 +479,183 @@ class Field extends React.Component {
 	render(){
 		const {sdk} = this.props;
 						
-		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipants, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxNumberChildrenFree, durationUnit, duration} = this.state;
-				
+		const {enabled, variablePricesEnabled,variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipants, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent} = this.state;
+		
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
 				
 				<Form>
 					
-					<RenderSwitch label={'Prices App'} type={'enabled'} status={enabled} sdk={sdk} handleSwitch={this.handleSwitch} />
+					<RenderSwitch label={'Prices App'} type={'enabled'} status={enabled} sdk={sdk} handler={this.handleSwitch} />
 					
 					{enabled ? <>
-					
-						<div style={{marginBottom: '1.5rem'}}>
-							<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} sdk={sdk} handleSwitch={this.handleSwitch} />
-						</div>	
+
+						<RenderSwitch label={'Variable Prices'} type={'variablePricesEnabled'} status={variablePricesEnabled} sdk={sdk} handler={this.handleSwitch} />
 						
 						{variablePricesEnabled ? <>
-							<div style={{marginBottom: '1.5rem'}}>
-								<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} type={'variablePricesLast'} status={variablePricesLast} sdk={sdk} handleSwitch={this.handleSwitch} />
-							</div>						
+							<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} type={'variablePricesLast'} status={variablePricesLast} sdk={sdk} handler={this.handleSwitch} />				
 						</> : ''}
 					
-						<div style={{marginBottom: '1.5rem'}}>
-							<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} sdk={sdk} handleSwitch={this.handleSwitch} />
-						</div>
 						
-						<div style={{marginBottom: '1.5rem'}}>
-							<RenderSwitch label={'Children Prices'} type={'childrenEnabled'} status={childrenEnabled}  sdk={sdk} handleSwitch={this.handleSwitch} />
-						</div>
+						<RenderSwitch label={'Seasons'} type={'seasonsEnabled'} status={seasonsEnabled} sdk={sdk} handler={this.handleSwitch} />
 						
-						<div style={{marginBottom: '1.5rem'}}>
-							<RenderSwitch label={'Women Prices'} type={'womenEnabled'} status={womenEnabled} sdk={sdk} handleSwitch={this.handleSwitch} />
-						</div>
+						<RenderSwitch label={'Children Prices'} type={'childrenEnabled'} status={childrenEnabled}  sdk={sdk} handler={this.handleSwitch} />
 						
-						<div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'maxParticipants'}>
-								{'Maximum Number of Price Rows'}
-							</FormLabel>						
-							<Select
-								id={'maxParticipants'}
-								value={maxParticipants}
-								isDisabled={enabled === false}
-								onChange={change =>{this.handlePriceRowChange({change, sdk})}}>
-								{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-							</Select>
-						</div>
+						<RenderSwitch label={'Women Prices'} type={'womenEnabled'} status={womenEnabled} sdk={sdk} handler={this.handleSwitch} />
 						
-						<div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'durationUnit'}>
-								{'Duration Unit'}
-							</FormLabel>
-							<Select
-								id={'durationUnit'}
-								value={durationUnit}
-								isDisabled={enabled === false}
-								onChange={(change) => {this.handleInput({sdk, change, type: 'durationUnit'})}}>
-								{Object.keys(durationsPluralSingular).map(r => <Option key={r} value={r}>{r}</Option>)}
-							</Select>
-						</div>
+						<RenderSelect 
+							label={'Max. Number of Participants'}
+							value={maxParticipants}
+							name={'maxParticipants'}
+							arr={[...Array(100)]}
+							isNumeric={true}
+							min={1}
+							handler={this.handlePriceRowChange}
+							sdk={sdk}
+							enabled={enabled}
+						/>
 						
-						<div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'duration'}>
-								{'Duration'}
-							</FormLabel>
-							<TextInput
-								id={'duration'}
-								value={duration}
-								isReadOnly={enabled === false}
-								onBlur={(change) => {this.handleInput({sdk, change, type: 'duration'})}} />
-						</div>						
+						<RenderSelect 
+							label={'Duration Unit'}
+							value={durationUnit}
+							name={'durationUnit'}
+							arr={Object.keys(durationsPluralSingular)}
+							isNumeric={false}
+							min={0}
+							handler={this.handleInput}
+							sdk={sdk}
+							enabled={enabled}
+						/>
+						
+						<RenderSelect 
+							label={'Duration'}
+							value={duration}
+							name={'duration'}
+							arr={[...Array(100)]}
+							isNumeric={true}
+							min={1}
+							handler={this.handleInput}
+							sdk={sdk}
+							enabled={enabled}
+						/>					
 						
 						{childrenEnabled ? <>
-							<div style={{marginBottom: '1.5rem'}}>
-								<FormLabel htmlFor={'childrenFreeUpToYearsOld'}>
-									{`Children free of cost up to ${childrenFreeUpToYearsOld} years old`}
-								</FormLabel>
-								<Select
-									id={'childrenFreeUpToYearsOld'}
-									value={childrenFreeUpToYearsOld}
-									isDisabled={enabled === false}
-									onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenFreeUpToYearsOld', change})}}>
-									{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-								</Select>
-							</div>
+						
+							<RenderSelect 
+								label={`Children free of cost up to ${childrenFreeUpToYearsOld} years old`}
+								value={childrenFreeUpToYearsOld}
+								name={'childrenFreeUpToYearsOld'}
+								arr={[...Array(18)]}
+								isNumeric={true}
+								min={0}
+								handler={this.handleVariablePricing}
+								sdk={sdk}
+								enabled={enabled}
+							/>						
+						
+							{childrenFreeUpToYearsOld > 0 ? <>
 							
-							{childrenFreeUpToYearsOld > 0 ? (
-								<div style={{marginBottom: '1.5rem'}}>
-									<FormLabel htmlFor={'maxNumberChildrenFree'}>
-										{`Up to ${maxNumberChildrenFree} children are allowed to book free of cost`}
-									</FormLabel>						
-									<Select
-										id={'maxNumberChildrenFree'}
-										value={maxNumberChildrenFree}
-										isDisabled={enabled === false}
-										onChange={(change) => {this.handleInput({sdk, change, type: 'maxNumberChildrenFree'})}}>
-										{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-									</Select>
-								</div>
-							) : ''}
+								<RenderSelect 
+									label={`Max. ${maxChildrenFreePerEvent} children are allowed to book free of cost per event`}
+									value={maxChildrenFreePerEvent}
+									name={'maxChildrenFreePerEvent'}
+									arr={[...Array(10)]}
+									isNumeric={true}
+									min={0}
+									handler={this.handleInput}
+									sdk={sdk}
+									enabled={enabled}
+								/>							
 							
-								<div style={{marginBottom: '1.5rem'}}>
-									<FormLabel htmlFor={'childrenDiscount'}>
-										{`Children discount up to ${childrenDiscount} years old`}
-									</FormLabel>
-									<Select
-										id={'childrenDiscount'}
-										value={childrenDiscount}
-										isDisabled={enabled === false}
-										onChange={(change) => {this.handleVariablePricing({sdk, type: 'childrenDiscount', change})}}>
-										{[...Array(18)].map((r, i) => <Option key={i} value={i}>{i}</Option>)}
-									</Select>
-								</div>
+								<RenderSelect 
+									label={`Max. ${maxChildrenFreePerBooking} children are allowed to book free of cost per booking`}
+									value={maxChildrenFreePerBooking}
+									name={'maxChildrenFreePerBooking'}
+									arr={[...Array(1000)]}
+									isNumeric={true}
+									min={0}
+									handler={this.handleInput}
+									sdk={sdk}
+									enabled={enabled}
+								/>								
+						
+							</> : ''}
+							
+								<RenderSelect 
+									label={`Children discount up to ${childrenDiscount} years old`}
+									value={childrenDiscount}
+									name={'childrenDiscount'}
+									arr={[...Array(18)]}
+									isNumeric={true}
+									min={0}
+									handler={this.handleVariablePricing}
+									sdk={sdk}
+									enabled={enabled}
+								/>
 							</> 
 						: ''}
 						
-						{womenEnabled ? <div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'womenPricing'}>
-								{'Women Pricing'}
-							</FormLabel>
-							<Select
-								id={'womenPricing'}
+						{womenEnabled ? <>
+
+							<RenderSelect 
+								label={'Women Pricing'}
 								value={womenPricing}
-								isDisabled={enabled === false}
-								onChange={(change) => {this.handleVariablePricing({sdk, type: 'womenPricing', change})}}>
-								<Option value={0}>{'Regular Rate'}</Option>
-								<Option value={1}>{'Grant Discount'}</Option>
-								<Option value={2}>{'Free of Cost'}</Option>
-							</Select>
-						</div> : ''}
+								name={'womenPricing'}
+								arr={[
+									{value: 0, text: 'Regular Rate'},
+									{value: 1, text: 'Grant Discount'},
+									{value: 2, text: 'Free of Cost'},
+								]}
+								isNumeric={false}
+								min={0}
+								handler={this.handleVariablePricing}
+								sdk={sdk}
+								enabled={enabled}
+							/>
+							
+							{womenPricing === 2 ? <>
+							
+								<RenderSelect 
+									label={`Max. ${maxWomenFreePerEvent} women are allowed to book free of cost per event`}
+									value={maxWomenFreePerEvent}
+									name={'maxWomenFreePerEvent'}
+									arr={[...Array(1000)]}
+									isNumeric={true}
+									min={1}
+									handler={this.handleInput}
+									sdk={sdk}
+									enabled={enabled}
+								/>
+
+								<RenderSelect 
+									label={`Max. ${maxWomenFreePerBooking} women are allowed to book free of cost per booking`}
+									value={maxWomenFreePerBooking}
+									name={'maxWomenFreePerBooking'}
+									arr={[...Array(10)]}
+									isNumeric={true}
+									min={1}
+									handler={this.handleInput}
+									sdk={sdk}
+									enabled={enabled}
+								/>									
 						
-						{seasonsEnabled ? <div style={{marginBottom: '1.5rem'}}>
-							<FormLabel htmlFor={'seasonsNumber'}>
-								{'Number of Seasons'}
-							</FormLabel>						
-							<Select
-								id={'seasonsNumber'}
+							</> : ''}
+							
+						</> : ''}
+						
+						{seasonsEnabled ? <>
+							<RenderSelect 
+								label={'Number of Seasons'}
 								value={Object.keys(seasons).length}
-								isDisabled={enabled === false}
-								onChange={change =>{this.handleSeasonsNumber({change, sdk})}}>
-								{[...Array(20)].map((r, i) => <Option key={i} value={i+1}>{i+1}</Option>)}
-							</Select>						
-						</div> : ''}
+								name={'seasonsNumber'}
+								arr={[...Array(20)]}
+								isNumeric={true}
+								min={1}
+								handler={this.handleSeasonsNumber}
+								sdk={sdk}
+								enabled={enabled}
+							/>						
+						</> : ''}
 					
 						<RenderHotTable
 							sdk={sdk}
