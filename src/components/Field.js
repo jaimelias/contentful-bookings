@@ -4,7 +4,7 @@ import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 import {RenderHotTable} from './handsOnTable.js';
 import {RenderSwitch, RenderSelect} from './formElements.js';
-import {isNumber, isValidDate, durationsPluralSingular, validateBookingEvent} from './utilities.js';
+import {isNumber, isValidDate, durationsPluralSingular, validateBookingEvent, colsTemplate} from './utilities.js';
 import {defaultState} from './defaultState.js';
 const priceKeys = ['fixedPrice', 'variablePrice'];
 
@@ -69,18 +69,28 @@ class Field extends React.Component {
 			
 			if(!change)
 			{
-				if(stateProp === 'womenEnabled')
-				{
-					args.womenPricing = 0;
-				}
-				else if(stateProp === 'childrenEnabled')
+				if(stateProp === 'childrenEnabled')
 				{
 					args = {
 						...args, 
 						maxChildrenFreePerEvent: 0, 
+						maxChildrenFreePerBooking: 0, 
 						childrenFreeUpToYearsOld: 0, 
 						childrenDiscount: 0
 					};
+				}
+				else if(stateProp === 'sharedEvent')
+				{
+					args = {
+						...args,
+						maxWomenFreePerEvent: 0,
+						maxChildrenFreePerEvent: 0
+					};
+				}
+				else if(stateProp === 'womenFreeEnabled')
+				{
+						args.maxWomenFreePerBooking = 0;
+						args.maxWomenFreePerEvent = 0;
 				}
 				else if(stateProp === 'seasonsEnabled')
 				{
@@ -89,7 +99,7 @@ class Field extends React.Component {
 				else if(stateProp === 'variablePriceEnabled')
 				{	
 					args.variablePriceLast = false;
-					
+
 					for(let k in args.seasons)
 					{
 						args.seasons[k].variablePrice = args.seasons[k].variablePrice
@@ -108,7 +118,7 @@ class Field extends React.Component {
 			}
 		}
 		
-		sdk.field.setValue(args).then(v => {
+		sdk.field.setValue({...this.state, ...args}).then(v => {
 			this.setState({...v});
 			console.log({handleSwitch: v});
 		});
@@ -118,81 +128,43 @@ class Field extends React.Component {
 		const {sdk} = this.props;
 		change = (isSwitch) ? change : parseInt(change.target.value);
 		change = isNumber(change) ? change : 0;
-		let {childrenDiscount, womenPricing, seasons, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking} = {...this.state};
-		let addNull = false;
-
-		let cols = {
-			colHeaders: {
-				pax1: 'Participants',
-				women: '',
-				children: ''
-			},
-			columns: {
-				pax1: {type: 'numeric', data: 'pax1'},
-				women: {type: 'numeric', data: 'women'},
-				children: {type: 'numeric', data: 'children'}
-			},
-		};
+		let {childrenDiscount, womenEnabled, seasons, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking} = {...this.state};
+		let cols = colsTemplate;
 		
-		if(womenPricing === 1 && stateProp !== 'womenPricing')
-		{
-			addNull = true;
-			cols.colHeaders = {...cols.colHeaders, pax1: 'Men', women: 'Women'};
-		}
-		else
+		womenEnabled = (stateProp === 'womenEnabled') ? change : womenEnabled;
+		childrenDiscount = (stateProp === 'childrenDiscount') ? change : childrenDiscount;
+				
+		if(womenEnabled)
 		{			
-			if(stateProp === 'womenPricing')
-			{
-				if(change !== 2)
-				{
-					maxWomenFreePerBooking = 0;
-					maxWomenFreePerEvent = 0;
-					
-					if(change === 1)
-					{
-						addNull = true;
-						cols.colHeaders = {...cols.colHeaders, pax1: 'Men', women: 'Women'};					
-					}
-					else
-					{
-						delete cols.colHeaders.womenPricing;
-						delete cols.columns.womenPricing;					
-					}
-				}
-				else
-				{
-					maxWomenFreePerBooking = 1;
-					maxWomenFreePerEvent = 1;					
-					delete cols.colHeaders.women;
-					delete cols.columns.women;					
-				}
-			}
-			else
-			{
-				delete cols.colHeaders.women;
-				delete cols.columns.women;				
-			}
+			cols.colHeaders = {
+				...colsTemplate.colHeaders, 
+				women: 'Women'
+			};
+			
+			cols.columns = {
+				...colsTemplate.columns, 
+				women: {type: 'numeric', data: 'women'}
+			};
 		}
-		
-		if(childrenDiscount > 0 && stateProp !== 'childrenDiscount')
+		else
+		{				
+			delete cols.colHeaders.women;
+			delete cols.columns.women;			
+		}
+
+		if(childrenDiscount > 0)
 		{
-			addNull = true;
-			cols.colHeaders = {...cols.colHeaders, children: `Child Up to ${change} years old`};
+			cols.colHeaders = {...colsTemplate.colHeaders, children: `Child Up to ${change} years old`};
+			cols.columns = {
+				...colsTemplate.columns, 
+				children: {type: 'numeric', data: 'children'}
+			};
 		}
 		else
 		{
-			if(stateProp === 'childrenDiscount' && change > 0)
-			{
-				addNull = true;
-				cols.colHeaders = {...cols.colHeaders, children: `Child Up to ${change} years old`};
-			}
-			else
-			{
-				delete cols.colHeaders.children;
-				delete cols.columns.children;				
-			}
+			delete cols.colHeaders.children;
+			delete cols.columns.children;				
 		}
-		
 		
 		if(stateProp === 'childrenFreeUpToYearsOld' && change === 0)
 		{
@@ -202,33 +174,47 @@ class Field extends React.Component {
 		
 		const colHeaders = Object.values(cols.colHeaders);
 		const columns = Object.values(cols.columns);
-				
-		for(let s in seasons)
-		{
-			for(let t in seasons[s])
-			{
-				if(priceKeys.includes(t))
-				{
-					seasons[s][t].map(r => {
-						
-						if(addNull)
-						{
-							if(stateProp === 'womenPricing')
-							{
-								r.women = '';
-							}
-							else if(stateProp === 'childrenDiscount')
-							{
-								r.children = '';
-							}
-						}
-
-						return r;
-					});					
-				}
-			}
-		}
 		
+		const addSeasonNulls = ({seasons, womenEnabled, childrenDiscount, priceKeys}) => {
+			
+				for(let s in seasons)
+				{
+					for(let t in seasons[s])
+					{
+						if(priceKeys.includes(t))
+						{
+							seasons[s][t].map(r => {
+								
+								if(womenEnabled)
+								{
+									r.women = '';
+								}
+								else
+								{
+									delete r.women;
+								}
+								
+								if(childrenDiscount > 0)
+								{
+									r.children = '';
+								}
+								else
+								{
+									delete r.children;
+								}
+								
+								return r;
+							});					
+						}
+					}
+				}			
+			
+			return seasons;
+		};
+		
+		seasons = addSeasonNulls({seasons, womenEnabled, childrenDiscount, priceKeys});
+		
+				
 		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [stateProp]: change, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking, updateHeight: true}).then(v => {
 			this.setState({...v});
 			console.log({handleVariablePricing: v});
@@ -240,11 +226,11 @@ class Field extends React.Component {
 	{
 		const {sdk} = this.props;
 		change = parseInt(change.target.value);
-		let {seasons, maxParticipantsPerBooking, womenPricing, childrenDiscount} = this.state;
+		let {seasons, maxParticipantsPerBooking, womenEnabled, childrenDiscount} = this.state;
 		const countSeasons = Object.keys(seasons).length;
 		let seasonRowTemplate = {pax1: ''};
 		
-		if(womenPricing === 1)
+		if(womenEnabled)
 		{
 			seasonRowTemplate = {...seasonRowTemplate, women: ''};
 		}
@@ -349,7 +335,7 @@ class Field extends React.Component {
 	handleMaxParticipants({change}){
 		
 		const {sdk} = this.props;
-		let {seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, womenPricing, childrenDiscount} = {...this.state};
+		let {seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, womenEnabled, childrenDiscount} = {...this.state};
 		change = parseInt(change.target.value);
 
 		let addNulls = {pax1: ''};
@@ -359,7 +345,7 @@ class Field extends React.Component {
 			maxParticipantsPerEvent = change;
 		}
 		
-		if(womenPricing === 1)
+		if(womenEnabled)
 		{
 			addNulls = {...addNulls, women: ''}
 		}
@@ -465,7 +451,7 @@ class Field extends React.Component {
 	
 	render(){
 						
-		const {enabled, variablePriceEnabled, variablePriceLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenPricing, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
+		const {enabled, variablePriceEnabled, variablePriceLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenFreeEnabled, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
 		
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
@@ -476,7 +462,7 @@ class Field extends React.Component {
 					
 					{enabled ? <>
 					
-						<RenderSwitch label={'Shared Event'} stateProp={'sharedEvent'} value={sharedEvent} handler={this.handleSwitch} />					
+						<RenderSwitch label={'Shared Event'} stateProp={'sharedEvent'} value={sharedEvent} handler={this.handleSwitch} isChild={true} />					
 					
 						{sharedEvent ? <>
 							<RenderSelect 
@@ -550,27 +536,13 @@ class Field extends React.Component {
 							/>						
 						</> : ''}	
 
-						<RenderSwitch label={'Women Prices'} stateProp={'womenEnabled'} value={womenEnabled}  handler={this.handleSwitch} />				
+						<RenderSwitch label={'Women Prices'} stateProp={'womenEnabled'} value={womenEnabled}  handler={this.handleVariablePricing} />				
 						
 						{womenEnabled ? <>
 
-							<RenderSelect 
-								label={'Women Pricing'}
-								value={womenPricing}
-								name={'womenPricing'}
-								arr={[
-									{value: 0, text: 'Regular Rate'},
-									{value: 1, text: 'Grant Discount'},
-									{value: 2, text: 'Free of Cost'},
-								]}
-								isNumeric={false}
-								min={0}
-								handler={this.handleVariablePricing}
-								enabled={enabled}
-								isChild={true}
-							/>
+							<RenderSwitch label={'Women Free of Cost'} stateProp={'womenFreeEnabled'} value={womenFreeEnabled} handler={this.handleSwitch} isChild={true} />	
 							
-							{womenPricing === 2 ? <>
+							{womenFreeEnabled ? <>
 							
 								{sharedEvent ? <>
 									<RenderSelect 
@@ -579,7 +551,7 @@ class Field extends React.Component {
 										name={'maxWomenFreePerEvent'}
 										arr={[...Array(1000)]}
 										isNumeric={true}
-										min={1}
+										min={0}
 										handler={this.handleInput}
 										enabled={enabled}
 										isChild={true}
@@ -592,7 +564,7 @@ class Field extends React.Component {
 									name={'maxWomenFreePerBooking'}
 									arr={[...Array(10)]}
 									isNumeric={true}
-									min={1}
+									min={0}
 									handler={this.handleInput}
 									enabled={enabled}
 									isChild={true}

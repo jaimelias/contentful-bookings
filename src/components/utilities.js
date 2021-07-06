@@ -50,3 +50,16 @@ export const validateBookingEvent = ({stateProp, change, args, thisState}) => {
 	
 	return args;
 };
+
+export const colsTemplate = {
+	colHeaders: {
+		pax1: 'Participants',
+		women: '',
+		children: ''
+	},
+	columns: {
+		pax1: {type: 'numeric', data: 'pax1'},
+		women: {type: 'numeric', data: 'women'},
+		children: {type: 'numeric', data: 'children'}
+	},
+};

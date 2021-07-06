@@ -22,7 +22,7 @@ export const defaultState = {
 	maxWomenFreePerBooking: 0,
 	maxWomenFreePerEvent: 0,
 	childrenDiscount: 0,
-	womenPricing: 0,
+	womenFreeEnabled: false,
 	colHeaders: ['Participants'],
 	columns: [
 		{type: 'numeric', data: 'pax1'}
