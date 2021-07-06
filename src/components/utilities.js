@@ -18,7 +18,7 @@ export const durationsPluralSingular = {
 	months: 'Month',
 };
 
-export const validateBookingEvent = ({type, change, args, thisState}) => {
+export const validateBookingEvent = ({stateProp, change, args, thisState}) => {
 	const bookingEvent = [
 		{
 			perEvent: 'maxParticipantsPerEvent',
@@ -38,11 +38,11 @@ export const validateBookingEvent = ({type, change, args, thisState}) => {
 		
 		const {perEvent, perBooking} = r;
 				
-		if(type === perEvent && change < thisState[perBooking])
+		if(stateProp === perEvent && change < thisState[perBooking])
 		{
 			args[perBooking] = change;
 		}
-		if(type === perBooking && change > thisState[perEvent])
+		if(stateProp === perBooking && change > thisState[perEvent])
 		{
 			args[perEvent] = change;
 		}

@@ -122,7 +122,7 @@ export const RenderHotTable = ({seasons, maxParticipantsPerBooking, colHeaders, 
 								id={`rename_season_${k}`}
 								isReadOnly={enabled === false}
 								value={k !== seasonName && seasonName ? seasonName : ''}
-								onChange={change =>{handleInput({change, type: k})}}
+								onChange={change =>{handleInput({change, stateProp: k})}}
 							/>
 							<br/>
 							<br/>							

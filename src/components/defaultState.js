@@ -7,6 +7,7 @@ export const defaultState = {
 	seasonsEnabled: false,
 	variablePriceEnabled: false,
 	variablePriceLast: false,
+	sharedEvent: false,
 	maxParticipantsPerBooking: 1,
 	maxParticipantsPerEvent: 1,
 	seasons: {season_1: {
