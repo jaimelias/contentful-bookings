@@ -4,7 +4,7 @@ import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 import {RenderHotTable} from './handsOnTable.js';
 import {RenderSwitch, RenderSelect} from './formElements.js';
-import {isNumber, isValidDate, durationsPluralSingular} from './utilities.js';
+import {isNumber, isValidDate, durationsPluralSingular, validateBookingEvent} from './utilities.js';
 import {defaultState} from './defaultState.js';
 const priceKeys = ['fixedPrice', 'variablePrice'];
 
@@ -353,15 +353,13 @@ class Field extends React.Component {
 		
 		const {sdk} = this.props;
 		let {seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, womenPricing, childrenDiscount} = {...this.state};
-		const newMaxRows = parseInt(change.target.value);
-		const oldmaxParticipantsPerBooking = parseInt(maxParticipantsPerBooking);
+		change = parseInt(change.target.value);
+
 		let addNulls = {pax1: ''};
 		
-		if(newMaxRows > maxParticipantsPerEvent)
+		if(change > maxParticipantsPerEvent)
 		{
-			console.log({newMaxRows, maxParticipantsPerEvent});
-			
-			maxParticipantsPerEvent = newMaxRows;
+			maxParticipantsPerEvent = change;
 		}
 		
 		if(womenPricing === 1)
@@ -373,7 +371,7 @@ class Field extends React.Component {
 			addNulls = {...addNulls, children: ''}
 		}
 		
-		if(oldmaxParticipantsPerBooking !== newMaxRows)
+		if(maxParticipantsPerBooking !== change)
 		{
 			for(let s in seasons)
 			{
@@ -381,18 +379,18 @@ class Field extends React.Component {
 				{	
 					if(priceKeys.includes(t))
 					{
-						seasons[s][t] = seasons[s][t].filter((r, i) => (i+1) <= newMaxRows);
+						seasons[s][t] = seasons[s][t].filter((r, i) => (i+1) <= change);
 						
-						if(newMaxRows > oldmaxParticipantsPerBooking)
+						if(change > maxParticipantsPerBooking)
 						{
-							const dif = (newMaxRows-oldmaxParticipantsPerBooking);				
+							const dif = (change-maxParticipantsPerBooking);				
 							[...Array(dif)].forEach(r => seasons[s][t].push(addNulls));
 						}						
 					}
 				}
 			}
 			
-			sdk.field.setValue({...this.state, seasons, maxParticipantsPerBooking: newMaxRows, maxParticipantsPerEvent, updateHeight: true}).then(v => {
+			sdk.field.setValue({...this.state, seasons, maxParticipantsPerBooking: change, maxParticipantsPerEvent, updateHeight: true}).then(v => {
 				this.setState({...v});
 				console.log({handleMaxParticipants: v});
 			});
@@ -401,17 +399,17 @@ class Field extends React.Component {
 	handleDateRowChange({seasonId, change}){
 		const {sdk} = this.props;
 		let {seasons} = {...this.state};
-		const newMaxRows = parseInt(change.target.value);
-		const oldmaxParticipantsPerBooking = parseInt(seasons[seasonId].dates.length);
+		change = parseInt(change.target.value);
+		const countDates = parseInt(seasons[seasonId].dates.length);
 		let addNulls = {from: '', to: ''};
 				
-		if(oldmaxParticipantsPerBooking !== newMaxRows)
+		if(countDates !== change)
 		{
-			seasons[seasonId].dates = seasons[seasonId].dates.filter((r, i) => (i+1) <= newMaxRows);
+			seasons[seasonId].dates = seasons[seasonId].dates.filter((r, i) => (i+1) <= change);
 			
-			if(newMaxRows > oldmaxParticipantsPerBooking)
+			if(change > countDates)
 			{
-				const dif = newMaxRows-oldmaxParticipantsPerBooking;				
+				const dif = change-countDates;				
 				[...Array(dif)].forEach(r => seasons[seasonId].dates.push(addNulls));
 			}				
 		
@@ -425,15 +423,19 @@ class Field extends React.Component {
 	handleInput({change, type, isNumeric}){
 		const {sdk} = this.props;
 		let {seasons} = {...this.state};
-				
 		change = change.target.value;
 		let args = {[type]: change};
 
 		//turns values to INT
 		if(isNumeric)
-		{
+		{			
 			change = parseInt(change);
 			args[type] = change;
+			
+			const validate = validateBookingEvent({type, change, args, thisState: this.state});
+			
+			args = {...args, ...validate};
+			
 		}
 		
 		//season rename
@@ -619,7 +621,7 @@ class Field extends React.Component {
 									label={`Max. ${maxChildrenFreePerEvent} children are allowed to book free of cost per event`}
 									value={maxChildrenFreePerEvent}
 									name={'maxChildrenFreePerEvent'}
-									arr={[...Array(10)]}
+									arr={[...Array(1000)]}
 									isNumeric={true}
 									min={0}
 									handler={this.handleInput}
@@ -631,7 +633,7 @@ class Field extends React.Component {
 									label={`Max. ${maxChildrenFreePerBooking} children are allowed to book free of cost per booking`}
 									value={maxChildrenFreePerBooking}
 									name={'maxChildrenFreePerBooking'}
-									arr={[...Array(1000)]}
+									arr={[...Array(10)]}
 									isNumeric={true}
 									min={0}
 									handler={this.handleInput}

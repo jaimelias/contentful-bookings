@@ -17,3 +17,36 @@ export const durationsPluralSingular = {
 	weeks: 'Week',
 	months: 'Month',
 };
+
+export const validateBookingEvent = ({type, change, args, thisState}) => {
+	const bookingEvent = [
+		{
+			perEvent: 'maxParticipantsPerEvent',
+			perBooking: 'maxParticipantsPerBooking'
+		},
+		{
+			perEvent: 'maxWomenFreePerEvent',
+			perBooking: 'maxWomenFreePerBooking'
+		},
+		{
+			perEvent: 'maxChildrenFreePerEvent',
+			perBooking: 'maxChildrenFreePerBooking'
+		}
+	];
+
+	bookingEvent.forEach(r => {
+		
+		const {perEvent, perBooking} = r;
+				
+		if(type === perEvent && change < thisState[perBooking])
+		{
+			args[perBooking] = change;
+		}
+		if(type === perBooking && change > thisState[perEvent])
+		{
+			args[perEvent] = change;
+		}
+	});
+	
+	return args;
+};
