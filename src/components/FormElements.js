@@ -32,7 +32,7 @@ export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, 
 				id={name}
 				value={value}
 				isDisabled={enabled === false}
-				onChange={(change) => {handler({change, stateProp: name, isNumeric})}}>
+				onChange={(change) => {handler({change, stateProp: name, isNumeric, isSwitch: false})}}>
 				{arr.map((r, i) => {
 
 					let v;
@@ -83,7 +83,7 @@ export const RenderSwitch = ({label, stateProp, value, handler, isChild}) => {
 					id={stateProp}
 					isChecked={value} 
 					labelText={label}
-					onToggle={(change) => {handler({stateProp, change})}}
+					onToggle={(change) => {handler({stateProp, change, isSwitch: true})}}
 				/>
 			</FormLabel>
 		</div>

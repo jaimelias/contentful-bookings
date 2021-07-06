@@ -113,11 +113,10 @@ class Field extends React.Component {
 			console.log({handleSwitch: v});
 		});
 	};
-	handleVariablePricing({stateProp, change}){
+	handleVariablePricing({stateProp, change, isSwitch}){
 		
 		const {sdk} = this.props;
-		
-		change = parseInt(change.target.value);
+		change = (isSwitch) ? change : parseInt(change.target.value);
 		change = isNumber(change) ? change : 0;
 		let {childrenDiscount, womenPricing, seasons, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking} = {...this.state};
 		let addNull = false;
@@ -229,8 +228,6 @@ class Field extends React.Component {
 				}
 			}
 		}
-		
-		
 		
 		sdk.field.setValue({...this.state, seasons, colHeaders, columns, [stateProp]: change, maxWomenFreePerBooking, maxWomenFreePerEvent, maxChildrenFreePerEvent, maxChildrenFreePerBooking, updateHeight: true}).then(v => {
 			this.setState({...v});
