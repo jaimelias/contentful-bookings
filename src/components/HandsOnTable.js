@@ -82,7 +82,7 @@ const GetPricingTable = ({seasonId, priceType, priceTableArgs}) => {
 	);
 };
 
-export const RenderHotTable = ({seasons, maxParticipantsPerBooking, colHeaders, columns, enabled, variablePriceEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
+export const RenderHotTable = ({seasons, maxParticipantsPerBooking, colHeaders, columns, enabled, variablePricesEnabled, selectedSeasonTab, handlePriceChange, handleDateRowChange, handleDateChange, handleSeasonAccordion, handleInput}) => {
 
 	const priceTableArgs = {seasons, maxParticipantsPerBooking, colHeaders, columns, handlePriceChange, enabled};
 	const dateTableArgs = {seasons, cellHeight, handleDateRowChange, handleDateChange, enabled};
@@ -139,13 +139,13 @@ export const RenderHotTable = ({seasons, maxParticipantsPerBooking, colHeaders, 
 						}
 						<SectionHeading>{'Fixed Price Per Person'}</SectionHeading>
 						<br/>
-						<GetPricingTable seasonId={k} priceType={'fixedPrice'} priceTableArgs={priceTableArgs}/>
-						{variablePriceEnabled 
+						<GetPricingTable seasonId={k} priceType={'fixedPrices'} priceTableArgs={priceTableArgs}/>
+						{variablePricesEnabled 
 						? <>
 							<br/>
 							<SectionHeading>{'Variable Price Per Person'}</SectionHeading>
 							<br/>
-							<GetPricingTable seasonId={k} priceType={'variablePrice'} priceTableArgs={priceTableArgs} />				
+							<GetPricingTable seasonId={k} priceType={'variablePrices'} priceTableArgs={priceTableArgs} />				
 						</> 
 						: ''}
 					</div>

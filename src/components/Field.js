@@ -6,7 +6,7 @@ import {RenderHotTable} from './handsOnTable.js';
 import {RenderSwitch, RenderSelect} from './formElements.js';
 import {isNumber, isValidDate, durationsPluralSingular, validateBookingEvent, colsTemplate} from './utilities.js';
 import {defaultState} from './defaultState.js';
-const priceKeys = ['fixedPrice', 'variablePrice'];
+const priceKeys = ['fixedPrices', 'variablePrices'];
 
 class Field extends React.Component {
 	constructor(props){
@@ -96,13 +96,13 @@ class Field extends React.Component {
 				{
 					args.seasons = {season_1: args.seasons.season_1};
 				}
-				else if(stateProp === 'variablePriceEnabled')
+				else if(stateProp === 'variablePricesEnabled')
 				{	
-					args.variablePriceLast = false;
+					args.variablePricesLast = false;
 
 					for(let k in args.seasons)
 					{
-						args.seasons[k].variablePrice = args.seasons[k].variablePrice
+						args.seasons[k].variablePrices = args.seasons[k].variablePrices
 						.map(r => {
 							let output = {};
 							
@@ -240,8 +240,8 @@ class Field extends React.Component {
 		}
 
 		const blankSeason = {
-			fixedPrice: [...Array(maxParticipantsPerBooking)].map(r => seasonRowTemplate),
-			variablePrice: [...Array(maxParticipantsPerBooking)].map(r => seasonRowTemplate),
+			fixedPrices: [...Array(maxParticipantsPerBooking)].map(r => seasonRowTemplate),
+			variablePrices: [...Array(maxParticipantsPerBooking)].map(r => seasonRowTemplate),
 			dates: [{from: '', to: ''}]
 		};
 		
@@ -451,7 +451,7 @@ class Field extends React.Component {
 	
 	render(){
 						
-		const {enabled, variablePriceEnabled, variablePriceLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenFreeEnabled, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
+		const {enabled, variablePricesEnabled, variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenFreeEnabled, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
 		
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
@@ -514,10 +514,10 @@ class Field extends React.Component {
 							isChild={true}
 						/>
 						
-						<RenderSwitch label={'Variable Prices'} stateProp={'variablePriceEnabled'} value={variablePriceEnabled} handler={this.handleSwitch} />
+						<RenderSwitch label={'Variable Prices'} stateProp={'variablePricesEnabled'} value={variablePricesEnabled} handler={this.handleSwitch} />
 						
-						{variablePriceEnabled ? <>
-							<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} stateProp={'variablePriceLast'} value={variablePriceLast} handler={this.handleSwitch} isChild={true}/>				
+						{variablePricesEnabled ? <>
+							<RenderSwitch label={`Variable Price Includes Last ${durationsPluralSingular[durationUnit]}?`} stateProp={'variablePricesLast'} value={variablePricesLast} handler={this.handleSwitch} isChild={true}/>				
 						</> : ''}
 					
 						<RenderSwitch label={'Seasons'} stateProp={'seasonsEnabled'} value={seasonsEnabled} handler={this.handleSwitch} />
@@ -641,7 +641,7 @@ class Field extends React.Component {
 							columns={columns}
 							selectedSeasonTab={selectedSeasonTab}
 							enabled={enabled}
-							variablePriceEnabled={variablePriceEnabled}
+							variablePricesEnabled={variablePricesEnabled}
 							handlePriceChange={this.handlePriceChange}
 							handleDateRowChange={this.handleDateRowChange}
 							handleDateChange={this.handleDateChange}

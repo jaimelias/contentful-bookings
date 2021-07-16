@@ -5,14 +5,14 @@ export const defaultState = {
 	childrenEnabled: false,
 	womenEnabled: false,
 	seasonsEnabled: false,
-	variablePriceEnabled: false,
-	variablePriceLast: false,
+	variablePricesEnabled: false,
+	variablePricesLast: true,
 	sharedEvent: false,
 	maxParticipantsPerBooking: 1,
 	maxParticipantsPerEvent: 1,
 	seasons: {season_1: {
-		fixedPrice: [{pax1: ''}],
-		variablePrice: [{pax1: ''}],
+		fixedPrices: [{pax1: ''}],
+		variablePrices: [{pax1: ''}],
 		name: 'Default Prices',
 		dates: [{from: '', to: ''}]
 	}},
