@@ -98,7 +98,7 @@ class Field extends React.Component {
 				}
 				else if(stateProp === 'variablePricesEnabled')
 				{	
-					args.variablePricesLast = false;
+					args.variablePricesLast = true;
 
 					for(let k in args.seasons)
 					{

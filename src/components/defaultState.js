@@ -6,7 +6,7 @@ export const defaultState = {
 	womenEnabled: false,
 	seasonsEnabled: false,
 	variablePricesEnabled: false,
-	variablePricesLast: false,
+	variablePricesLast: true,
 	sharedEvent: false,
 	maxParticipantsPerBooking: 1,
 	maxParticipantsPerEvent: 1,
