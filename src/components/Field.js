@@ -60,8 +60,12 @@ class Field extends React.Component {
 		
 		if(stateProp === 'enabled')
 		{
-			//resets state
-			args = {...defaultState, ...args};
+			//resets state			
+			
+			sdk.field.setValue({...defaultState, ...args}).then(v => {
+				this.setState({...v});
+				console.log({handleSwitch: v});
+			});
 		}
 		else
 		{
@@ -116,12 +120,12 @@ class Field extends React.Component {
 					}
 				}
 			}
+			
+			sdk.field.setValue({...this.state, ...args}).then(v => {
+				this.setState({...v});
+				console.log({handleSwitch: v});
+			});			
 		}
-		
-		sdk.field.setValue({...this.state, ...args}).then(v => {
-			this.setState({...v});
-			console.log({handleSwitch: v});
-		});
 	};
 	handleVariablePricing({stateProp, change, isSwitch}){
 		

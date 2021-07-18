@@ -13,9 +13,7 @@ export const durationsPluralSingular = {
 	minutes: 'Minute',
 	hours: 'Hour',
 	days: 'Day',
-	nights: 'Night',
-	weeks: 'Week',
-	months: 'Month',
+	nights: 'Night'
 };
 
 export const validateBookingEvent = ({stateProp, change, args, thisState}) => {
