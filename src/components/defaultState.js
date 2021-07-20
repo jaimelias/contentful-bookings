@@ -1,6 +1,7 @@
 export const defaultState = {
 	enabled: false,
 	duration: 1,
+	maxDuration: 1,
 	durationUnit: 'hours',
 	childrenEnabled: false,
 	womenEnabled: false,

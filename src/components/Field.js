@@ -4,7 +4,7 @@ import '@contentful/forma-36-react-components/dist/styles.css';
 import 'handsontable/dist/handsontable.full.css';
 import {RenderHotTable} from './handsOnTable.js';
 import {RenderSwitch, RenderSelect} from './formElements.js';
-import {isNumber, isValidDate, durationsPluralSingular, validateBookingEvent, colsTemplate} from './utilities.js';
+import {isNumber, isValidDate, durationsPluralSingular, restrictMinMax, colsTemplate} from './utilities.js';
 import {defaultState} from './defaultState.js';
 const priceKeys = ['fixedPrices', 'variablePrices'];
 
@@ -93,8 +93,11 @@ class Field extends React.Component {
 				}
 				else if(stateProp === 'womenFreeEnabled')
 				{
-						args.maxWomenFreePerBooking = 0;
-						args.maxWomenFreePerEvent = 0;
+					args = {
+						...args,
+						maxWomenFreePerBooking: 0,
+						maxWomenFreePerEvent: 0
+					};
 				}
 				else if(stateProp === 'seasonsEnabled')
 				{
@@ -419,10 +422,9 @@ class Field extends React.Component {
 			change = parseInt(change);
 			args[stateProp] = change;
 			
-			const validate = validateBookingEvent({stateProp, change, args, thisState: this.state});
+			const validate = restrictMinMax({stateProp, change, args, thisState: this.state});
 			
-			args = {...args, ...validate};
-			
+			args = {...args, ...validate};			
 		}
 		
 		//season rename
@@ -455,7 +457,7 @@ class Field extends React.Component {
 	
 	render(){
 						
-		const {enabled, variablePricesEnabled, variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenFreeEnabled, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
+		const {enabled, variablePricesEnabled, variablePricesLast, childrenEnabled, womenEnabled, seasonsEnabled, seasons, maxParticipantsPerBooking, maxParticipantsPerEvent, childrenFreeUpToYearsOld, childrenDiscount, womenFreeEnabled, colHeaders, columns, selectedSeasonTab, maxChildrenFreePerEvent, maxChildrenFreePerBooking, durationUnit, duration, maxDuration, maxWomenFreePerBooking, maxWomenFreePerEvent, sharedEvent} = this.state;
 		
 		return(
 			<div ref={element => this.divRef = element} id={'hot-app'}>
@@ -510,6 +512,18 @@ class Field extends React.Component {
 							label={'Duration'}
 							value={duration}
 							name={'duration'}
+							arr={[...Array(100)]}
+							isNumeric={true}
+							min={1}
+							handler={this.handleInput}
+							enabled={enabled}
+							isChild={true}
+						/>
+						
+						<RenderSelect 
+							label={'Max. Duration'}
+							value={maxDuration}
+							name={'maxDuration'}
 							arr={[...Array(100)]}
 							isNumeric={true}
 							min={1}

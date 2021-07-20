@@ -16,33 +16,39 @@ export const durationsPluralSingular = {
 	nights: 'Night'
 };
 
-export const validateBookingEvent = ({stateProp, change, args, thisState}) => {
-	const bookingEvent = [
+export const restrictMinMax = ({stateProp, change, args, thisState}) => {
+	const minMax = [
 		{
-			perEvent: 'maxParticipantsPerEvent',
-			perBooking: 'maxParticipantsPerBooking'
+			max: 'maxParticipantsPerEvent',
+			min: 'maxParticipantsPerBooking'
 		},
 		{
-			perEvent: 'maxWomenFreePerEvent',
-			perBooking: 'maxWomenFreePerBooking'
+			max: 'maxWomenFreePerEvent',
+			min: 'maxWomenFreePerBooking'
 		},
 		{
-			perEvent: 'maxChildrenFreePerEvent',
-			perBooking: 'maxChildrenFreePerBooking'
+			max: 'maxChildrenFreePerEvent',
+			min: 'maxChildrenFreePerBooking'
+		},
+		{
+			max: 'maxDuration',
+			min: 'duration'
 		}
 	];
 
-	bookingEvent.forEach(r => {
+	minMax.forEach(r => {
 		
-		const {perEvent, perBooking} = r;
+		const {max, min} = r;
 				
-		if(stateProp === perEvent && change < thisState[perBooking])
+		if(stateProp === max && change < thisState[min])
 		{
-			args[perBooking] = change;
+			console.log({max});
+			args[min] = change;
 		}
-		if(stateProp === perBooking && change > thisState[perEvent])
+		if(stateProp === min && change > thisState[max])
 		{
-			args[perEvent] = change;
+			console.log({min});
+			args[max] = change;
 		}
 	});
 	
