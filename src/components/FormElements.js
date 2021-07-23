@@ -22,10 +22,10 @@ const childStyle = {
 export const RenderSelect = ({label, value, name, arr, min, handler, isNumeric, enabled, isChild}) => {
 	
 	const thisStyle = (isChild) ? {...selectStyle, ...childStyle, paddingLeft: '20px'}  : selectStyle;
-	
+		
 	return (<>
 		<div style={thisStyle}>
-			<FormLabel htmlFor={'durationUnit'}>
+			<FormLabel htmlFor={name}>
 				{label}
 			</FormLabel>
 			<Select
@@ -89,5 +89,3 @@ export const RenderSwitch = ({label, stateProp, value, handler, isChild}) => {
 		</div>
 	);
 }
-
-
